@@ -66,4 +66,4 @@ We follow a structured branching strategy to keep the codebase clean:
 ✅ Always open a PR and wait for review
 
 ## Status
-🚧 Currently in active development — Phase 1 (Foundation Setup)
+🚧 Currently in active development -- Phase 1 (Foundation Setup)
