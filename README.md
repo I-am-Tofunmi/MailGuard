@@ -25,8 +25,19 @@ Non-technical African SME owners can't fix email deliverability issues because e
 ## Project Structure
 ```
 MailGuard/
-├── client/     # React frontend (Tofunmi)
-├── server/     # FastAPI backend (Samuel + Yusuf)
+├── client/                  # React frontend (Tofunmi)
+│   ├── public/              # Static assets
+│   ├── src/
+│   │   ├── components/      # Reusable UI components (buttons, cards, navbar)
+│   │   ├── pages/           # Full page views (Landing, Dashboard, Results, Login)
+│   │   ├── services/        # API calls to the FastAPI backend
+│   │   ├── hooks/           # Custom React hooks (useAuth, useScan)
+│   │   ├── context/         # Auth state management (JWT, user state)
+│   │   └── assets/          # Images, icons, logos
+│   ├── index.html           # App entry HTML
+│   ├── vite.config.js       # Vite + Tailwind configuration
+│   └── package.json         # Frontend dependencies
+├── server/                  # FastAPI backend (Samuel + Yusuf) — coming soon
 └── README.md
 ```
 
@@ -34,6 +45,25 @@ MailGuard/
 - **Tofunmi Omololu** — Frontend + API Integration + Database
 - **Samuel Oluwafikunayomi** — Backend (FastAPI, SpamAssassin, DNS validation)
 - **Sanni Yusuf Olamilekan** — AI/ML Engine + Backend Support
+
+## Contributing
+We follow a structured branching strategy to keep the codebase clean:
+
+- `main` — stable, production-ready code only
+- `dev` — active development branch
+- `feature/your-feature-name` — individual feature branches
+
+### Workflow
+1. Clone the repo
+2. Switch to `dev` branch — `git checkout dev`
+3. Create your feature branch — `git checkout -b feature/your-feature-name`
+4. Work on your feature and commit regularly
+5. Push your branch — `git push origin feature/your-feature-name`
+6. Open a Pull Request into `dev` and await review before merging
+
+### Rule
+❌ Never push directly to `main` or `dev`
+✅ Always open a PR and wait for review
 
 ## Status
 🚧 Currently in active development — Phase 1 (Foundation Setup)
