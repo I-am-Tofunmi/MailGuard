@@ -39,7 +39,7 @@ MailGuard/
 
 ## Team
 - **Tofunmi Omololu** — Frontend + API Integration + Database
-- **Samuel Oluwafikunayomi** — Backend (FastAPI, SpamAssassin, DNS validation)
+- **Samuel Oluwafikunayomi** — Backend (FastAPI, SpamAssassin, DNS validation) + Database Support
 - **Sanni Yusuf Olamilekan** — AI/ML Engine + Backend Support
 
 ## Status
