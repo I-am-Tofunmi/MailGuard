@@ -25,8 +25,15 @@ Non-technical African SME owners can't fix email deliverability issues because e
 ## Project Structure
 ```
 MailGuard/
-├── client/     # React frontend (Tofunmi)
-├── server/     # FastAPI backend (Samuel + Yusuf)
+├── client/                  # React frontend (Tofunmi)
+│   ├── src/
+│   │   ├── components/      # Reusable UI components
+│   │   ├── pages/           # Full page views (Landing, Dashboard, Results)
+│   │   ├── services/        # API calls to the backend
+│   │   ├── hooks/           # Custom React hooks
+│   │   ├── context/         # Auth state management
+│   │   └── assets/          # Images and icons
+├── server/                  # FastAPI backend (Samuel + Yusuf)
 └── README.md
 ```
 
