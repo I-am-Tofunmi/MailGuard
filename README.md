@@ -41,8 +41,8 @@ MailGuard/
 └── README.md
 ```
 ## Resources
-- [UI/UX Design Document](./docs/MailGuard_UI_Design_v2.pdf)
-- [Project Action Plan](./docs/MailGuard_Project_Action_Plan.pdf)
+- [UI/UX Design Document](https://drive.google.com/file/d/1sjKLIvg5Rc8ixGE2jlacgDhE8EPazQKR/view?usp=drive_link)
+- [Project Action Plan](https://drive.google.com/file/d/1nz_vPu7bFRoBKqRILsL2vQHmqtwI5GG9/view?usp=drive_link)
 
 ## Team
 - **Tofunmi Omololu** — Frontend + API Integration + Database
