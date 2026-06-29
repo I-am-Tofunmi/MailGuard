@@ -40,6 +40,9 @@ MailGuard/
 ├── server/                  # FastAPI backend (Samuel + Yusuf) — coming soon
 └── README.md
 ```
+## Resources
+- [UI/UX Design Document](./docs/MailGuard_UI_Design_v2.pdf)
+- [Project Action Plan](./docs/MailGuard_Project_Action_Plan.pdf)
 
 ## Team
 - **Tofunmi Omololu** — Frontend + API Integration + Database
