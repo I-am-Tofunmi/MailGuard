@@ -1,8 +1,25 @@
+import { Routes, Route } from "react-router-dom"
+import LandingPage from "./pages/LandingPage"
+import LoginPage from "./pages/LoginPage"
+import RegisterPage from "./pages/RegisterPage"
+import ScanPage from "./pages/ScanPage"
+import ResultPage from "./pages/ResultPage"
+import CelebrationPage from "./pages/CelebrationPage"
+import DashboardPage from "./pages/DashboardPage"
+
+
+
 function App() {
   return (
-    <div className="flex items-center justify-center h-screen bg-green-50">
-      <h1 className= "text-4xl font-bold text-green-700">MailGuard 🛡️</h1>
-    </div>
+   <Routes>
+    <Route path="/" element={<LandingPage/>}/>
+    <Route path="/login" element={<LoginPage/>} />
+    <Route path="/register" element={<RegisterPage />} />
+    <Route path="/scan" element={<ScanPage />} />
+    <Route path="/results" element={<ResultPage/>} />
+    <Route path="/celebration" element={<CelebrationPage/>}/>
+    <Route path="/dashboard" element={<DashboardPage />} />
+   </Routes>
   )
 }
 
