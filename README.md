@@ -69,4 +69,12 @@ We follow a structured branching strategy to keep the codebase clean:
 ✅ Always open a PR and wait for review
 
 ## Status
-🚧 Currently in active development -- Phase 1 (Foundation Setup)
+🚧 Currently in active development — Phase 1 (Foundation Setup)
+
+### Progress
+- ✅ Project structure initialized
+- ✅ Frontend setup (React + Vite + Tailwind + React Router)
+- ✅ Navbar component built
+- ✅ All 7 page routes configured
+- ⏳ Landing page hero section (in progress)
+- ⏳ Backend setup (pending)
