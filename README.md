@@ -76,5 +76,10 @@ We follow a structured branching strategy to keep the codebase clean:
 - ✅ Frontend setup (React + Vite + Tailwind + React Router)
 - ✅ Navbar component built
 - ✅ All 7 page routes configured
-- ⏳ Landing page hero section (in progress)
-- ⏳ Backend setup (pending)
+- ✅ Hero section built (Landing Page)
+- ✅ Outfit font integrated
+- ⏳ Landing page remaining sections (How It Works, Stats, Africa section, Footer)
+- ⏳ Login / Register page
+- ⏳ Scan page
+- ⏳ Results page
+- ⏳ Backend setup (pending — Samuel's PC situation)

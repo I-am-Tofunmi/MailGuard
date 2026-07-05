@@ -1,3 +1,4 @@
+import { Bell } from 'lucide-react';
 function Navbar() {
     return (
         <nav className="flex justify-between items-center px-6 py-4 bg-white border-b border-gray-200">
@@ -8,6 +9,7 @@ function Navbar() {
                 <li className="text-gray-500">History</li>
                 <li className="text-gray-500">Settings</li>
             </ul>
+            <Bell className="w-h h-5 text-gray-600 ml-4" />
             <button type="button" className="bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold">New Scan</button>
         </nav>
     )
