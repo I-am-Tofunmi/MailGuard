@@ -1,6 +1,6 @@
 import { ShieldCheck, CheckCheck, Timer, WandSparkles } from "lucide-react";
 function HeroSection() {
-    return <section className="text-center justify-center bg-gray-50 pt-6 pb-16">
+    return <section className="text-center justify-center bg-gray-100 pt-6 pb-16">
         <div className="justify-center items-center flex flex-col gap-6 mt-8">
             <p className="bg-emerald-100 text-emerald-700 text-sm rounded-full px-4 py-1 flex items-center gap-1"><ShieldCheck className="w-4 h-4" /> Privacy-First Email Auditing</p>
             <h1 className="text-5xl font-bold text-gray-900 max-w-2xl leading-tight">Why are your emails landing in spam?</h1>
