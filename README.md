@@ -80,8 +80,9 @@ We follow a structured branching strategy to keep the codebase clean:
 - ✅ Outfit font integrated
 - ✅ How It Works section built
 - ✅ Stats Banner built
-- ⏳ Built for the Backbone of Africa section
+- ✅ Built for the Backbone of Africa section built
 - ⏳ Footer
+- ⏳ CTA section
 - ⏳ Login / Register page
 - ⏳ Scan page
 - ⏳ Results page
