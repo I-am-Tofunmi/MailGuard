@@ -3,6 +3,8 @@ import HeroSection from "../components/HeroSection";
 import HowItWorksSection from "../components/HowItWorksSection";
 import StatsBanner from "../components/StatsBanner";
 import AfricaSection from "../components/AfricaSection";
+import CTASection from "../components/CTASection";
+import Footer from "../components/Footer";
 function LandingPage() {
     return (
         <div>
@@ -11,6 +13,8 @@ function LandingPage() {
             <HowItWorksSection />
             <StatsBanner />
             <AfricaSection />
+            <CTASection />
+            <Footer />
         </div>
     )
 }
