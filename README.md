@@ -84,7 +84,7 @@ We follow a structured branching strategy to keep the codebase clean:
 - ✅ CTA section built
 - ✅ Footer built
 - ✅ Landing Page complete
-- ✅ Login page built (in progress — styling refinements pending)
+- ✅ Login page complete
 - ⏳ Register page
 - ⏳ Scan page
 - ⏳ Results page
