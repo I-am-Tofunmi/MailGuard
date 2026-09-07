@@ -85,7 +85,7 @@ We follow a structured branching strategy to keep the codebase clean:
 - ✅ Footer built
 - ✅ Landing Page complete
 - ✅ Login page complete
-- ⏳ Register page
+- ✅ Register page complete
 - ⏳ Scan page
 - ⏳ Results page
 - ⏳ Backend setup (pending — Samuel's PC situation)
