@@ -11,6 +11,8 @@ import ResultPage from "./pages/ResultPage";
 import CelebrationPage from "./pages/CelebrationPage";
 import DashboardPage from "./pages/DashboardPage";
 import CheckEmailPage from "./pages/CheckEmailPage";
+import HistoryPage from "./pages/HistoryPage";
+import SettingsPage from "./pages/SettingsPage";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -31,6 +33,8 @@ function App() {
         <Route path="/scan" element={<ScanPage />} />
         <Route path="/results" element={<ResultPage />} />
         <Route path="/celebration" element={<CelebrationPage />} />
+        <Route path="/history" element={<HistoryPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Route>
     </Routes>
   );
