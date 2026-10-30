@@ -312,7 +312,7 @@ function DashboardPage() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between border-t border-gray-200 px-5 py-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-gray-200 px-5 py-4">
 
             <p className="text-xs text-gray-600">
               Showing {startIndex + 1} to{" "}
@@ -377,7 +377,7 @@ function DashboardPage() {
       <div className="fixed bottom-8 right-5 z-40">
 
         {showTips && (
-          <div className="mb-3 w-[280px] rounded-xl border border-gray-200 bg-white p-5 shadow-xl">
+          <div className="mb-3 w-[280px] max-w-[calc(100vw-40px)] rounded-xl border border-gray-200 bg-white p-5 shadow-xl">
 
             <div className="mb-3 flex items-center justify-between">
               <h3 className="text-sm font-bold text-gray-900">

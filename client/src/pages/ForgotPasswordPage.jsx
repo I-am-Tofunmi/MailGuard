@@ -117,7 +117,7 @@ function ForgotPasswordPage() {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                     disabled={loading}
-                    className="rounded-md border border-gray-300 p-2 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+                    className="w-full rounded-md border border-gray-300 p-2 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
                   />
 
                   {error && (

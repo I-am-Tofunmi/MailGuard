@@ -110,7 +110,7 @@ function LoginPage() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 disabled={loading}
-                className="rounded-md border border-gray-300 p-2"
+                className="w-full rounded-md border border-gray-300 p-2"
               />
 
               <div className="flex items-center justify-between">

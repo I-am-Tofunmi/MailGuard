@@ -209,7 +209,7 @@ function ResultPage() {
         {isDemo && (
           <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
             Demo results: these findings are simulated and have not been
-            verified against the DNS records for {domain}.
+            verified against the DNS records for <span className="break-all font-medium">{domain}</span>.
           </div>
         )}
 
@@ -241,7 +241,7 @@ function ResultPage() {
             </h2>
             <p className="mt-2 text-sm text-gray-600">
               No actionable issues were identified by the available
-              checks for {domain}. This does not guarantee inbox placement.
+              checks for <span className="break-all font-medium">{domain}</span>. This does not guarantee inbox placement.
             </p>
           </div>
         ) : reviewComplete ? (
@@ -262,7 +262,7 @@ function ResultPage() {
 
             <p className="mb-6 text-sm leading-6 text-gray-600">
               You've reviewed {issues.length} recommended
-              {issues.length === 1 ? " fix" : " fixes"} for {domain}.
+              {issues.length === 1 ? " fix" : " fixes"} for <span className="break-all font-medium">{domain}</span>.
               Your DNS records still need to be checked again to
               confirm that the issues have been resolved.
             </p>

@@ -264,7 +264,7 @@ function HistoryList({ entries, onView }) {
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
       {/* Table header — desktop */}
-      <div className="hidden grid-cols-[minmax(0,2fr)_140px_160px_120px] gap-4 border-b border-gray-100 bg-[#F4F7FC] px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500 sm:grid">
+      <div className="hidden grid-cols-[minmax(0,2fr)_130px_160px_120px] gap-4 border-b border-gray-100 bg-[#F4F7FC] px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-500 md:grid">
         <span>Email / Domain</span>
         <span>Date</span>
         <span>Result</span>
@@ -279,7 +279,7 @@ function HistoryList({ entries, onView }) {
           return (
             <li
               key={entry.id}
-              className={`grid grid-cols-1 gap-3 px-5 py-4 transition hover:bg-gray-50 sm:grid-cols-[minmax(0,2fr)_140px_160px_120px] sm:items-center sm:gap-4 ${
+              className={`grid grid-cols-1 gap-3 px-5 py-4 transition hover:bg-gray-50 md:grid-cols-[minmax(0,2fr)_130px_160px_120px] md:items-center md:gap-4 ${
                 index !== 0 ? "border-t border-gray-100" : ""
               }`}
             >
@@ -293,30 +293,31 @@ function HistoryList({ entries, onView }) {
                 </p>
               </div>
 
-              {/* Date */}
-              <div className="flex items-center gap-1.5">
-                <ClockIcon size={13} className="shrink-0 text-gray-400" />
-                <span className="text-xs text-gray-500">
-                  {friendlyDate(entry.date)}
-                </span>
-              </div>
+              {/* Date & Badge row on mobile, separate grid cells on md+ */}
+              <div className="flex flex-wrap items-center justify-between gap-2 md:contents">
+                <div className="flex items-center gap-1.5">
+                  <ClockIcon size={13} className="shrink-0 text-gray-400" />
+                  <span className="text-xs text-gray-500">
+                    {friendlyDate(entry.date)}
+                  </span>
+                </div>
 
-              {/* Status badge */}
-              <div>
-                <span
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${cfg.badgeCls}`}
-                >
-                  <Icon size={13} className="shrink-0" />
-                  {cfg.label}
-                </span>
+                <div>
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${cfg.badgeCls}`}
+                  >
+                    <Icon size={13} className="shrink-0" />
+                    {cfg.label}
+                  </span>
+                </div>
               </div>
 
               {/* View button */}
-              <div className="sm:text-right">
+              <div className="pt-1 md:pt-0 md:text-right">
                 <button
                   type="button"
                   onClick={() => onView(entry)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-emerald-300 hover:text-emerald-700"
+                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-emerald-300 hover:text-emerald-700 sm:w-auto sm:py-1.5"
                 >
                   View result
                   <ArrowRight size={13} />

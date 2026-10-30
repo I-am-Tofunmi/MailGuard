@@ -18,7 +18,7 @@ function CheckEmailPage() {
       </header>
 
       <main className="flex flex-1 items-center justify-center px-5 py-12">
-        <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+        <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 text-center shadow-sm">
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100">
             <MailCheck className="h-10 w-10 text-emerald-700" />
           </div>
@@ -32,7 +32,7 @@ function CheckEmailPage() {
             confirmation link
             {email ? (
               <>
-                {" "}to <strong>{email}</strong>
+                {" "}to <strong className="break-all">{email}</strong>
               </>
             ) : (
               " to your email address"

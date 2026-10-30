@@ -144,7 +144,7 @@ function RegisterPage() {
                 value={formData.fullName}
                 onChange={handleChange}
                 disabled={loading}
-                className="rounded-md border border-gray-300 p-2"
+                className="w-full rounded-md border border-gray-300 p-2"
               />
 
               <label htmlFor="email" className="font-light">
@@ -160,7 +160,7 @@ function RegisterPage() {
                 value={formData.email}
                 onChange={handleChange}
                 disabled={loading}
-                className="rounded-md border border-gray-300 p-2"
+                className="w-full rounded-md border border-gray-300 p-2"
               />
 
               <label htmlFor="password" className="font-light">
