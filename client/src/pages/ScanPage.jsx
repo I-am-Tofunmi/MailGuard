@@ -249,7 +249,7 @@ function ScanPage() {
               : "Checking your domain's email authentication configuration."}
           </p>
 
-          <p className="mt-2 text-xs font-medium text-emerald-700">
+          <p className="mt-2 text-xs font-medium text-emerald-700 break-all">
             {domain}
           </p>
         </div>

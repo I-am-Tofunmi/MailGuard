@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
@@ -10,6 +9,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import AuthIllustration from "../components/AuthIllustration";
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -113,221 +113,227 @@ function RegisterPage() {
         </p>
       </header>
 
-      <section className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gradient-to-b from-emerald-50 to-white px-4 py-10">
-        <form
-          onSubmit={handleRegister}
-          className="flex w-full max-w-[440px] flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-md sm:p-8"
-        >
-          <h1 className="text-center text-3xl font-semibold sm:text-4xl">
-            Create your account.
-          </h1>
+      <section className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-emerald-50 to-white px-4 py-10">
+        <div className="flex w-full max-w-5xl flex-col items-center justify-center gap-4 sm:gap-6 lg:flex-row lg:items-center lg:justify-center lg:gap-12 xl:gap-16">
+          <AuthIllustration variant="register" />
 
-          <p className="text-center font-light text-gray-600">
-            Start improving your business email deliverability
-            with MailGuard.
-          </p>
-
-          <label htmlFor="fullName" className="font-light">
-            Full Name
-          </label>
-          <input
-            id="fullName"
-            name="fullName"
-            type="text"
-            autoComplete="name"
-            placeholder="Jane Doe"
-            required
-            value={formData.fullName}
-            onChange={handleChange}
-            disabled={loading}
-            className="rounded-md border border-gray-300 p-2"
-          />
-
-          <label htmlFor="email" className="font-light">
-            Business Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            placeholder="name@company.com"
-            required
-            value={formData.email}
-            onChange={handleChange}
-            disabled={loading}
-            className="rounded-md border border-gray-300 p-2"
-          />
-
-          <label htmlFor="password" className="font-light">
-            Password
-          </label>
-          <div className="relative">
-            <input
-              id="password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="••••••••"
-              required
-              minLength={8}
-              value={formData.password}
-              onChange={handleChange}
-              disabled={loading}
-              className="w-full rounded-md border border-gray-300 p-2 pr-12"
-            />
-            <button
-              type="button"
-              aria-label={
-                showPassword ? "Hide password" : "Show password"
-              }
-              onClick={() => setShowPassword((value) => !value)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+          <div className="flex w-full max-w-[440px] flex-col items-center gap-4">
+            <form
+              onSubmit={handleRegister}
+              className="flex w-full flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-md sm:p-8"
             >
-              {showPassword ? (
-                <EyeOff className="h-5 w-5" />
-              ) : (
-                <Eye className="h-5 w-5" />
+              <h1 className="text-center text-3xl font-semibold sm:text-4xl">
+                Create your account.
+              </h1>
+
+              <p className="text-center font-light text-gray-600">
+                Start improving your business email deliverability
+                with MailGuard.
+              </p>
+
+              <label htmlFor="fullName" className="font-light">
+                Full Name
+              </label>
+              <input
+                id="fullName"
+                name="fullName"
+                type="text"
+                autoComplete="name"
+                placeholder="Jane Doe"
+                required
+                value={formData.fullName}
+                onChange={handleChange}
+                disabled={loading}
+                className="w-full rounded-md border border-gray-300 p-2"
+              />
+
+              <label htmlFor="email" className="font-light">
+                Business Email
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                placeholder="name@company.com"
+                required
+                value={formData.email}
+                onChange={handleChange}
+                disabled={loading}
+                className="w-full rounded-md border border-gray-300 p-2"
+              />
+
+              <label htmlFor="password" className="font-light">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="••••••••"
+                  required
+                  minLength={8}
+                  value={formData.password}
+                  onChange={handleChange}
+                  disabled={loading}
+                  className="w-full rounded-md border border-gray-300 p-2 pr-12"
+                />
+                <button
+                  type="button"
+                  aria-label={
+                    showPassword ? "Hide password" : "Show password"
+                  }
+                  onClick={() => setShowPassword((value) => !value)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+
+              <label htmlFor="confirmPassword" className="font-light">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="••••••••"
+                  required
+                  minLength={8}
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  disabled={loading}
+                  className="w-full rounded-md border border-gray-300 p-2 pr-12"
+                />
+                <button
+                  type="button"
+                  aria-label={
+                    showConfirmPassword
+                      ? "Hide confirmation password"
+                      : "Show confirmation password"
+                  }
+                  onClick={() =>
+                    setShowConfirmPassword((value) => !value)
+                  }
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
+
+              <label className="flex items-start gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  required
+                  disabled={loading}
+                  className="mt-1"
+                />
+                <span>
+                  I agree to the{" "}
+                  <Link
+                    to="/terms"
+                    className="font-medium text-emerald-700"
+                  >
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    to="/privacy"
+                    className="font-medium text-emerald-700"
+                  >
+                    Privacy Policy
+                  </Link>
+                  .
+                </span>
+              </label>
+
+              {error && (
+                <p
+                  role="alert"
+                  className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
+                >
+                  {error}
+                </p>
               )}
-            </button>
-          </div>
 
-          <label htmlFor="confirmPassword" className="font-light">
-            Confirm Password
-          </label>
-          <div className="relative">
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="••••••••"
-              required
-              minLength={8}
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              disabled={loading}
-              className="w-full rounded-md border border-gray-300 p-2 pr-12"
-            />
-            <button
-              type="button"
-              aria-label={
-                showConfirmPassword
-                  ? "Hide confirmation password"
-                  : "Show confirmation password"
-              }
-              onClick={() =>
-                setShowConfirmPassword((value) => !value)
-              }
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-            >
-              {showConfirmPassword ? (
-                <EyeOff className="h-5 w-5" />
-              ) : (
-                <Eye className="h-5 w-5" />
-              )}
-            </button>
-          </div>
-
-          <label className="flex items-start gap-2 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              required
-              disabled={loading}
-              className="mt-1"
-            />
-            <span>
-              I agree to the{" "}
-              <Link
-                to="/terms"
-                className="font-medium text-emerald-700"
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-emerald-700 p-3 text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Terms of Service
-              </Link>{" "}
-              and{" "}
-              <Link
-                to="/privacy"
-                className="font-medium text-emerald-700"
-              >
-                Privacy Policy
-              </Link>
-              .
-            </span>
-          </label>
+                {loading ? "Creating Account..." : "Create Account"}
+                {!loading && <ArrowRight className="h-4 w-4" />}
+              </button>
 
-          {error && (
-            <p
-              role="alert"
-              className="rounded-lg bg-red-50 p-3 text-sm text-red-700"
-            >
-              {error}
+              <div className="flex items-center gap-2">
+                <hr className="flex-1 border-gray-300" />
+                <span className="text-center font-mono text-xs text-gray-500">
+                  OR CONTINUE WITH
+                </span>
+                <hr className="flex-1 border-gray-300" />
+              </div>
+
+              <div className="flex justify-center gap-5">
+                <button
+                  type="button"
+                  disabled
+                  title="Google sign-in coming soon"
+                  className="flex items-center gap-2 rounded-md border border-gray-300 px-5 py-2 opacity-50"
+                >
+                  <FcGoogle className="h-5 w-5" />
+                  Google
+                </button>
+
+                <button
+                  type="button"
+                  disabled
+                  title="Microsoft sign-in coming soon"
+                  className="flex items-center gap-2 rounded-md border border-gray-300 px-5 py-2 opacity-50"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 23 23"
+                  >
+                    <rect x="0" y="0" width="10.5" height="10.5" fill="#f25022" />
+                    <rect x="12.5" y="0" width="10.5" height="10.5" fill="#7fba00" />
+                    <rect x="0" y="12.5" width="10.5" height="10.5" fill="#00a4ef" />
+                    <rect x="12.5" y="12.5" width="10.5" height="10.5" fill="#ffb900" />
+                  </svg>
+                  Microsoft
+                </button>
+              </div>
+            </form>
+
+            <p className="flex items-center gap-1 text-center text-gray-500">
+              <LockKeyhole className="h-4 w-4" />
+              Assisted Clarity for Email Security
             </p>
-          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl bg-emerald-700 p-3 text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? "Creating Account..." : "Create Account"}
-            {!loading && <ArrowRight className="h-4 w-4" />}
-          </button>
-
-          <div className="flex items-center gap-2">
-            <hr className="flex-1 border-gray-300" />
-            <span className="text-center font-mono text-xs text-gray-500">
-              OR CONTINUE WITH
-            </span>
-            <hr className="flex-1 border-gray-300" />
-          </div>
-
-          <div className="flex justify-center gap-5">
-            <button
-              type="button"
-              disabled
-              title="Google sign-in coming soon"
-              className="flex items-center gap-2 rounded-md border border-gray-300 px-5 py-2 opacity-50"
-            >
-              <FcGoogle className="h-5 w-5" />
-              Google
-            </button>
-
-            <button
-              type="button"
-              disabled
-              title="Microsoft sign-in coming soon"
-              className="flex items-center gap-2 rounded-md border border-gray-300 px-5 py-2 opacity-50"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 23 23"
+            <p className="text-center text-sm text-gray-500">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="font-medium text-emerald-700"
               >
-                <rect x="0" y="0" width="10.5" height="10.5" fill="#f25022" />
-                <rect x="12.5" y="0" width="10.5" height="10.5" fill="#7fba00" />
-                <rect x="0" y="12.5" width="10.5" height="10.5" fill="#00a4ef" />
-                <rect x="12.5" y="12.5" width="10.5" height="10.5" fill="#ffb900" />
-              </svg>
-              Microsoft
-            </button>
+                Sign in
+              </Link>
+            </p>
           </div>
-        </form>
-
-        <p className="flex items-center gap-1 text-center text-gray-500">
-          <LockKeyhole className="h-4 w-4" />
-          Assisted Clarity for Email Security
-        </p>
-
-        <p className="text-center text-sm text-gray-500">
-          Already have an account?{" "}
-          <Link
-            to="/login"
-            className="font-medium text-emerald-700"
-          >
-            Sign in
-          </Link>
-        </p>
+        </div>
       </section>
 
       <footer className="flex flex-col gap-3 border-t border-gray-200 bg-emerald-50 px-6 py-6 text-sm text-gray-600 sm:flex-row sm:justify-between sm:px-16">

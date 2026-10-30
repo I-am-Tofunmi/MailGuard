@@ -182,7 +182,7 @@ function Navbar() {
         {/* Mobile Menu Button */}
         <button
           type="button"
-          className="text-gray-700 md:hidden"
+          className="-mr-2 rounded-lg p-2 text-gray-700 transition hover:bg-gray-100 hover:text-emerald-700 md:hidden"
           aria-label={menuOpen ? "Close menu" : "Open menu"}
           aria-expanded={menuOpen}
           aria-controls="mobile-nav"
