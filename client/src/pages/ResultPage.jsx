@@ -26,83 +26,83 @@ import { getScanById } from "../services/api";
 
 const issueGuides = {
   mx: {
-    title: "Your domain is missing MX records.",
-    severity: "Mail Delivery Warning",
+    title: "Your domain is not set up to receive incoming emails.",
+    severity: "Inbound Email Warning",
     impact: "HIGH",
     description:
-      "No Mail Exchange (MX) records were detected. Receiving servers will not be able to deliver incoming emails to your domain.",
-    provider: "Your DNS Provider",
+      "No Mail Exchange (MX) records were detected. Customer inquiries, quote requests, and email replies sent to your business will bounce or fail to arrive.",
+    provider: "Your Domain Registrar",
     steps: [
-      "Open your DNS management console with your domain registrar or cloud DNS provider.",
-      "Add the MX records provided by your email host (e.g. Google Workspace, Microsoft 365, Zoho).",
-      "Verify that the MX record priority is correctly configured (e.g. priority 10).",
+      "Log in to your domain registrar (e.g., Whogohost, Truehost, Namecheap, GoDaddy, or Cloudflare).",
+      "Open your DNS Management or Zone Editor.",
+      "Add the MX records provided by your email host (e.g. Google Workspace, Microsoft 365, or Zoho Mail).",
     ],
     explanation:
-      "MX (Mail Exchange) records instruct the internet where to send emails addressed to your domain.",
+      "MX records tell other mail servers which email provider handles incoming messages for your business domain.",
     benefits: [
-      "Enables inbound mail delivery",
-      "Prevents email bounces and delivery failures",
-      "Ensures compliant mail server discovery",
+      "Ensures customer inquiries, proposals, and invoice replies reach your inbox",
+      "Prevents email delivery failures and bounced messages",
+      "Enables smooth business communication with your clients",
     ],
   },
   spf: {
-    title: "Your SPF configuration needs attention.",
+    title: "Your domain needs an authorized sender policy (SPF).",
     severity: "Email Authentication Warning",
     impact: "HIGH",
     description:
-      "Multiple SPF records, permissive qualifiers (+all), or missing records can cause emails to fail sender authorization checks at Gmail and Yahoo.",
+      "Without a proper SPF record, inbox providers like Gmail and Yahoo cannot verify that your emails genuinely come from your business, causing your proposals and invoices to land in spam.",
     provider: "Your DNS Provider",
     steps: [
-      "Log in to your DNS provider and open the DNS management section for your domain.",
+      "Log in to your domain registrar (e.g., Whogohost, Truehost, Namecheap, or Cloudflare) and open DNS Management.",
       "Find all TXT records beginning with v=spf1.",
-      "Combine all authorized sending mechanisms into a single valid SPF record ending with -all or ~all. Remove duplicate records.",
+      "Combine all your sending services (like Google Workspace, Zoho, or cPanel) into a single valid SPF record ending with -all or ~all. Remove any duplicate SPF records.",
     ],
     explanation:
-      "SPF (Sender Policy Framework) lists the authorized IP addresses and mail servers allowed to send emails from your domain.",
+      "SPF is like a public guest list for your domain: it tells Gmail, Yahoo, and Outlook which servers are officially allowed to send emails on your behalf.",
     benefits: [
-      "Prevents unauthorized sender spoofing",
-      "Improves inbox placement rates",
-      "Complies with Google and Yahoo sender guidelines",
+      "Stops fraudsters from impersonating your business name",
+      "Keeps your sales quotes and invoices in clients' inboxes",
+      "Complies with mandatory sender rules enforced by Google and Yahoo",
     ],
   },
   dkim: {
-    title: "Your DKIM configuration needs attention.",
-    severity: "Cryptographic Security Warning",
+    title: "Your emails need a digital signature (DKIM).",
+    severity: "Security Signature Warning",
     impact: "HIGH",
     description:
-      "No active DKIM signatures were discovered on standard selectors. Receiving mail servers may not be able to verify that signed message contents were not modified in transit.",
+      "DKIM adds a tamper-proof digital signature to every email you send. Without it, spam filters may suspect your emails have been altered or forged in transit.",
     provider: "Your Email Provider",
     steps: [
-      "Open the administration console of your email service provider.",
-      "Generate a new DKIM key or look up your active selector name.",
-      "Publish the provided TXT record at <selector>._domainkey.yourdomain.com in your DNS settings.",
+      "Open your email provider admin console (Google Workspace, Microsoft 365, or Zoho Mail).",
+      "Go to the Email Authentication or DKIM section and generate a DKIM record.",
+      "Copy the selector name and key, then publish it as a TXT record in your domain's DNS settings.",
     ],
     explanation:
-      "DKIM attaches a cryptographic signature to each outgoing email, proving message integrity and domain authenticity.",
+      "DKIM works like an official wax seal on a letter—it proves to the recipient's inbox that your message really came from you and was not tampered with.",
     benefits: [
-      "Protects against in-transit email tampering",
-      "Builds sender domain reputation",
-      "Significantly boosts deliverability",
+      "Protects your brand credibility and email integrity",
+      "Builds sender domain reputation with Gmail and Outlook",
+      "Greatly improves email deliverability for invoices and proposals",
     ],
   },
   dmarc: {
-    title: "Your DMARC policy needs attention.",
+    title: "Your domain needs a security guard policy (DMARC).",
     severity: "Domain Protection Warning",
     impact: "MEDIUM",
     description:
-      "Your domain lacks a protective DMARC enforcement policy (p=reject or p=quarantine). Unauthenticated emails may still be delivered or reported in monitoring mode (p=none).",
+      "DMARC tells receiving inboxes what to do when someone tries to forge an email using your business name. Without it, scammers can freely spoof your domain to defraud your clients.",
     provider: "Your DNS Provider",
     steps: [
-      "Open your domain's DNS management dashboard.",
-      "Check or create a TXT record at _dmarc.yourdomain.com.",
-      "Set an enforced policy such as v=DMARC1; p=quarantine; or p=reject; with an email address for aggregate reports (rua=mailto:...).",
+      "Log in to your domain manager (Whogohost, Truehost, Namecheap, Cloudflare, etc.).",
+      "Create a new TXT record at _dmarc.yourdomain.com.",
+      "Set an enforced policy such as v=DMARC1; p=quarantine; (or p=reject; once all sending tools are verified) with an email address for reporting.",
     ],
     explanation:
-      "DMARC instructs receiving mail servers how to treat emails that fail SPF or DKIM alignment checks.",
+      "DMARC is your domain's security guard. It commands Gmail, Yahoo, and Outlook to quarantine or reject forged messages sent by scammers pretending to be you.",
     benefits: [
-      "Blocks phishing and domain impersonation attacks",
-      "Provides automated reports on unauthorized sending attempts",
-      "Mandated by major mailbox providers for bulk senders",
+      "Prevents invoice fraud and business email compromise",
+      "Protects your clients and partners from spoofed scams",
+      "Satisfies mandatory inbox provider security requirements",
     ],
   },
 };
@@ -166,6 +166,16 @@ function buildIssuesFromResults(results) {
   }
 
   return list;
+}
+
+function getScoreBreakdownText(score) {
+  if (score >= 80) {
+    return "Your business emails are well-protected and trusted by Gmail, Yahoo, and Outlook.";
+  }
+  if (score >= 50) {
+    return "Your emails are at risk of landing in spam folders or being delayed.";
+  }
+  return "Major deliverability issues detected. Scammers can send emails using your domain, and major inboxes may reject your messages entirely.";
 }
 
 function ResultPage() {
@@ -404,9 +414,12 @@ function ResultPage() {
                   {status}
                 </span>
               </div>
-              <p className="mt-1 text-xs sm:text-sm text-gray-700 leading-snug">
+              <p className="mt-1 text-xs sm:text-sm font-semibold text-emerald-950 leading-snug">
+                {getScoreBreakdownText(score)}
+              </p>
+              <p className="mt-0.5 text-xs text-gray-700">
                 {issues.length === 0
-                  ? "Outstanding! All core authentication protocols are aligned and configured properly."
+                  ? "All core authentication protocols are properly configured to protect your proposals and invoices."
                   : `Identified ${issues.length} deliverability ${
                       issues.length === 1 ? "remediation" : "remediations"
                     } to help keep your emails out of the spam folder.`}
@@ -515,6 +528,13 @@ function ResultPage() {
 
                   {showAllSteps && (
                     <div className="space-y-3">
+                      <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-3 sm:p-4 text-xs text-blue-900 flex items-start gap-2.5">
+                        <Info size={16} className="shrink-0 mt-0.5 text-blue-700" />
+                        <p className="leading-relaxed">
+                          <strong>How to add these records:</strong> Log in to where you bought your domain (like Whogohost, Truehost, Namecheap, or Cloudflare), open <strong>DNS Management</strong>, and paste these records.
+                        </p>
+                      </div>
+
                       {explanation.steps.map((st, idx) => (
                         <div
                           key={idx}
@@ -529,9 +549,12 @@ function ResultPage() {
                                 {st.title}
                               </h4>
                             </div>
-                            <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 shrink-0">
-                              {st.recordType || "TXT"}
-                            </span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className="text-[10px] font-semibold text-gray-500 uppercase">Record Type:</span>
+                              <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                                {st.recordType || "TXT"}
+                              </span>
+                            </div>
                           </div>
 
                           <p className="mt-1 text-xs text-gray-600 sm:pl-7 leading-relaxed break-words">
@@ -540,21 +563,28 @@ function ResultPage() {
 
                           {st.value && (
                             <div className="mt-3 sm:pl-7">
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white p-2.5">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white p-3">
                                 <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-gray-400">
+                                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-600">
                                     <span>
-                                      Host: <span className="font-mono text-gray-700 select-all">{st.host || "@"}</span>
+                                      <strong className="text-gray-700 uppercase font-semibold text-[10px]">Name / Host:</strong>{" "}
+                                      <span className="font-mono text-gray-900 select-all font-medium">{st.host || "@"}</span>
                                     </span>
                                     {st.priority && (
                                       <span>
-                                        • Priority: <span className="font-mono text-gray-700">{st.priority}</span>
+                                        • <strong className="text-gray-700 uppercase font-semibold text-[10px]">Priority:</strong>{" "}
+                                        <span className="font-mono text-gray-900 font-medium">{st.priority}</span>
                                       </span>
                                     )}
                                   </div>
-                                  <p className="mt-0.5 font-mono text-xs text-emerald-950 break-all select-all">
-                                    {st.value}
-                                  </p>
+                                  <div className="mt-2">
+                                    <span className="text-[10px] uppercase font-bold text-gray-500 block mb-1">
+                                      Paste This Value:
+                                    </span>
+                                    <p className="font-mono text-xs text-emerald-950 break-all select-all font-medium bg-emerald-50/60 p-2 rounded border border-emerald-100">
+                                      {st.value}
+                                    </p>
+                                  </div>
                                 </div>
 
                                 <button

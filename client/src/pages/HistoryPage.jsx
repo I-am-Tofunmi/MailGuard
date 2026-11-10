@@ -194,7 +194,7 @@ function HistoryPage() {
               Your Email Check History
             </h1>
             <p className="mt-1 text-sm text-gray-500">
-              Track your email health and deliverability performance over time.
+              Track your domain health over time to ensure your quotes, proposals, and invoices reliably reach clients' inboxes.
             </p>
           </div>
 
@@ -202,7 +202,7 @@ function HistoryPage() {
             to="/scan"
             className="inline-flex items-center justify-center gap-2 self-start rounded-md bg-[#007F59] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
           >
-            Run New Check
+            Run New Domain Check
           </Link>
         </div>
 
@@ -424,16 +424,15 @@ function EmptyState() {
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
         <MailSearch size={30} className="text-emerald-600" strokeWidth={1.5} />
       </div>
-      <h2 className="text-xl font-bold text-gray-900">No checks yet</h2>
+      <h2 className="text-xl font-bold text-gray-900">No domain checks yet</h2>
       <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-gray-500">
-        Run your first email check to see how your business emails are performing.
-        It only takes a minute.
+        Run your first email check to see whether your business proposals and invoices are landing in spam. It takes less than 60 seconds.
       </p>
       <Link
         to="/scan"
         className="mt-6 inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-800"
       >
-        Run my first check
+        Run My First Domain Check
         <ArrowRight size={16} />
       </Link>
     </div>

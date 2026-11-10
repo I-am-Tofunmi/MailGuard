@@ -123,11 +123,11 @@ function DashboardPage() {
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-[#071B36]">
-              Active Monitoring
+              Domain Deliverability Monitoring
             </h1>
 
             <p className="mt-1 text-sm text-gray-500">
-              Review your domain deliverability performance and authentication status.
+              Track whether your business proposals and invoices are reaching clients' inboxes or risking the spam folder.
             </p>
           </div>
 
@@ -136,7 +136,7 @@ function DashboardPage() {
             className="inline-flex items-center justify-center gap-2 self-start rounded-md bg-[#007F59] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
           >
             <Plus size={16} />
-            Run New Scan
+            Scan a Domain
           </Link>
         </div>
 
@@ -148,8 +148,8 @@ function DashboardPage() {
             {domains.length > 0
               ? `Monitoring ${pagination.total} domain audit ${
                   pagination.total === 1 ? "record" : "records"
-                }. Live DNS deliverability engine active.`
-              : "No domain checks recorded yet. Run your first scan to track deliverability and authentication health."}
+                }. Live inbox protection active.`
+              : "No domain checks recorded yet. Run your first scan to check if your business emails reach clients without landing in spam."}
           </p>
         </div>
 
@@ -164,16 +164,16 @@ function DashboardPage() {
             <div className="px-5 py-14 text-center">
               <Globe size={36} className="mx-auto mb-3 text-gray-400" />
               <h3 className="text-base font-semibold text-gray-900">
-                No active domains yet
+                No domain checks yet
               </h3>
               <p className="mx-auto mt-1 max-w-sm text-sm text-gray-500">
-                Scan your domain to identify SPF, DKIM, and DMARC issues and track your score.
+                Scan your business domain to identify why your emails land in spam and get step-by-step instructions to fix it.
               </p>
               <Link
                 to="/scan"
                 className="mt-5 inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
               >
-                Scan My Domain
+                Scan Your Business Domain
               </Link>
             </div>
           ) : (
@@ -367,7 +367,7 @@ function DashboardPage() {
           </div>
 
           <p className="text-sm italic text-gray-400">
-            Secure email delivery made simple.
+            Keep your business emails, invoices, and proposals out of the spam folder.
           </p>
         </div>
       </main>
@@ -377,7 +377,7 @@ function DashboardPage() {
         {showTips && (
           <div className="mb-3 w-[280px] max-w-[calc(100vw-40px)] rounded-xl border border-gray-200 bg-white p-5 shadow-xl">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-gray-900">MailGuard Tips</h3>
+              <h3 className="text-sm font-bold text-gray-900">MailGuard Deliverability Tip</h3>
               <button
                 type="button"
                 aria-label="Close tips"
@@ -389,8 +389,7 @@ function DashboardPage() {
             </div>
 
             <p className="text-xs leading-6 text-gray-600">
-              Regularly review your SPF, DKIM, and DMARC configurations to identify
-              email authentication issues before they affect inbox placement.
+              Regularly check your domain DNS settings (SPF, DKIM, DMARC) so your invoices and client proposals never end up in spam.
             </p>
           </div>
         )}

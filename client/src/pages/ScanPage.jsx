@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   CheckCircle2,
   XCircle,
@@ -21,31 +21,31 @@ const defaultChecks = [
   {
     id: "domain",
     title: "Domain Verification",
-    description: "Resolving domain and syntax...",
+    description: "Confirming your business domain is online and valid...",
     status: "checking",
   },
   {
     id: "mx",
-    title: "MX Records",
-    description: "Checking mail exchange routing...",
+    title: "Receiving Messages (MX)",
+    description: "Checking if your email address is set up to receive messages...",
     status: "pending",
   },
   {
     id: "spf",
-    title: "SPF Record",
-    description: "Checking sender authorization policy...",
+    title: "Sender Protection (SPF)",
+    description: "Checking if scammers can impersonate your brand...",
     status: "pending",
   },
   {
     id: "dkim",
-    title: "DKIM Signatures",
-    description: "Probing cryptographic public keys...",
+    title: "Message Authenticity (DKIM)",
+    description: "Verifying cryptographic proof that your emails are authentic...",
     status: "pending",
   },
   {
     id: "dmarc",
-    title: "DMARC Policy",
-    description: "Checking domain alignment and enforcement...",
+    title: "Delivery & Security Rules (DMARC)",
+    description: "Verifying your email protection and deliverability rules...",
     status: "pending",
   },
 ];
@@ -106,23 +106,26 @@ function ScanPage() {
           {
             id: "domain",
             title: "Domain Verified",
-            description: `Apex domain: ${auditResponse.domain}`,
+            description: `Domain confirmed: ${auditResponse.domain}`,
             status: "passed",
           },
           {
             id: "mx",
-            title: "MX Records",
-            description:
-              rawResults.mx?.message ||
-              (rawResults.mx?.hasMx ? "Mail routing is active" : "No MX records found"),
+            title: "Receiving Messages (MX)",
+            description: rawResults.mx?.hasMx
+              ? "Your business email is set up to receive incoming messages"
+              : "Emails sent to your business cannot be delivered (missing MX)",
             status: rawResults.mx?.hasMx ? "passed" : "failed",
           },
           {
             id: "spf",
-            title: "SPF Record",
+            title: "Sender Protection (SPF)",
             description:
-              rawResults.spf?.message ||
-              (rawResults.spf?.hasSpf ? "SPF policy detected" : "No SPF record found"),
+              rawResults.spf?.status === "pass"
+                ? "Your authorized sending servers are protected from impersonation"
+                : rawResults.spf?.rfcViolation
+                ? "Conflicting duplicate SPF records detected — causes delivery failure"
+                : "Scammers can send fake emails impersonating your company domain",
             status:
               rawResults.spf?.status === "pass"
                 ? "passed"
@@ -132,9 +135,11 @@ function ScanPage() {
           },
           {
             id: "dkim",
-            title: "DKIM Signatures",
+            title: "Message Authenticity (DKIM)",
             description:
-              rawResults.dkim?.message || "DKIM verification completed",
+              rawResults.dkim?.status === "pass"
+                ? "Cryptographic signature verification is active on your messages"
+                : "Verify DKIM keys with your email provider (e.g. Google Workspace, cPanel, M365)",
             status:
               rawResults.dkim?.status === "pass"
                 ? "passed"
@@ -144,9 +149,13 @@ function ScanPage() {
           },
           {
             id: "dmarc",
-            title: "DMARC Policy",
+            title: "Delivery & Security Rules (DMARC)",
             description:
-              rawResults.dmarc?.message || "DMARC policy status evaluated",
+              rawResults.dmarc?.status === "pass"
+                ? "Active security rules instruct Gmail and Yahoo to protect your business"
+                : rawResults.dmarc?.policy === "none"
+                ? "DMARC is in monitoring mode and not actively blocking forged emails"
+                : "Missing DMARC policy — forged messages may land in customer inboxes or get flagged",
             status:
               rawResults.dmarc?.status === "pass"
                 ? "passed"
@@ -163,7 +172,7 @@ function ScanPage() {
         clearInterval(progressTimer);
         console.error("DNS audit failed:", err);
         setErrorMessage(
-          err.message || "Failed to scan domain. Please verify your connection."
+          err.message || "Unable to check this domain right now. Please verify the domain name or check your connection."
         );
         setIsScanning(false);
       }
@@ -205,7 +214,7 @@ function ScanPage() {
     e.preventDefault();
     const trimmed = manualInput.trim();
     if (!trimmed) {
-      setManualError("Please enter a domain or email address.");
+      setManualError("Please enter your business domain or email address.");
       return;
     }
     setManualError("");
@@ -276,10 +285,10 @@ function ScanPage() {
             </div>
 
             <h1 className="text-2xl font-bold text-[#071B36]">
-              Start an Email Deliverability Audit
+              Check Your Business Email Health
             </h1>
-            <p className="mt-2 text-sm text-gray-600 max-w-md mx-auto">
-              Enter your email address or website domain to run a live DNS diagnosis for MX, SPF, DKIM, and DMARC.
+            <p className="mt-2 text-sm text-gray-600 max-w-md mx-auto leading-relaxed">
+              Enter your website domain (e.g. myshop.co.za or company.ng) to see if your invoices, quotes, and emails are reaching customers or landing in spam.
             </p>
 
             <form onSubmit={handleManualSubmit} className="mt-6 flex flex-col gap-3 sm:flex-row text-left">
@@ -291,8 +300,8 @@ function ScanPage() {
                     setManualInput(e.target.value);
                     if (manualError) setManualError("");
                   }}
-                  placeholder="e.g. yourcompany.com"
-                  aria-label="Enter email domain"
+                  placeholder="e.g. myshop.co.za or yourcompany.com"
+                  aria-label="Enter business domain name"
                   className={`min-h-[48px] w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 sm:text-base ${
                     manualError
                       ? "border-red-400 focus:border-red-500 focus:ring-red-100"
@@ -310,7 +319,7 @@ function ScanPage() {
                 type="submit"
                 className="flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-emerald-700 px-6 py-3 text-sm sm:text-base font-bold text-white transition hover:bg-emerald-800 cursor-pointer"
               >
-                Scan Domain
+                Audit My Domain Now
                 <ArrowRight size={16} />
               </button>
             </form>
@@ -324,15 +333,15 @@ function ScanPage() {
                   ? "Scan Complete!"
                   : errorMessage
                   ? "Audit Interrupted"
-                  : "Scanning your email setup..."}
+                  : "Checking your email health..."}
               </h1>
 
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-gray-500 leading-relaxed">
                 {scanComplete
-                  ? "Preparing your live diagnostic report..."
+                  ? "Preparing your plain-English health report and step-by-step fix guide..."
                   : errorMessage
                   ? "Unable to complete DNS audit for this domain."
-                  : "Querying live DNS records for MX, SPF, DKIM, and DMARC compliance."}
+                  : "Checking if your business quotes, proposals, and invoices are reaching inboxes without landing in spam."}
               </p>
 
               <p className="mt-2 text-xs font-semibold text-emerald-700 break-all">
@@ -363,7 +372,7 @@ function ScanPage() {
                     }}
                     className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-xs sm:text-sm font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer"
                   >
-                    Scan Different Domain
+                    Check Another Domain
                   </button>
                 </div>
               </div>
@@ -415,8 +424,8 @@ function ScanPage() {
                           }`}
                         >
                           {check.title}
-                          {check.status === "failed" && " - issue detected"}
-                          {check.status === "warning" && " - warning"}
+                          {check.status === "failed" && " - action needed"}
+                          {check.status === "warning" && " - attention needed"}
                         </h3>
 
                         <p className="mt-1 text-xs leading-5 text-gray-600 line-clamp-2 break-words">
@@ -434,10 +443,10 @@ function ScanPage() {
 
                     <div className="min-w-0">
                       <h3 className="text-sm font-semibold text-gray-600 truncate">
-                        Gmail Inbox Placement
+                        Inbox Placement Confidence
                       </h3>
                       <p className="mt-1 text-xs text-gray-400">
-                        Evaluated from protocol compliance
+                        Based on Gmail, Yahoo, & Outlook rules
                       </p>
                     </div>
                   </div>
@@ -449,7 +458,7 @@ function ScanPage() {
                       Why this scan matters
                     </h3>
                     <p className="text-[11px] text-emerald-800">
-                      Protects sender reputation and blocks spoofing.
+                      Prevents missed sales, unpaid invoices, and spoofing.
                     </p>
                   </div>
                 </div>
@@ -462,14 +471,14 @@ function ScanPage() {
                     <div>
                       <h3 className="mb-1 text-base font-semibold text-[#071B36]">
                         {progress < 100
-                          ? "Analyzing live DNS records"
+                          ? "Checking live domain records"
                           : "Audit Complete"}
                       </h3>
 
                       <p className="text-xs sm:text-sm leading-6 text-gray-600">
                         {progress < 100
-                          ? "MailGuard is directly querying root name servers for your domain's MX, SPF, DKIM, and DMARC settings."
-                          : "All checks completed. Redirecting to your detailed deliverability report and fix recommendations..."}
+                          ? "MailGuard is directly checking your domain settings against Google, Yahoo, and Microsoft deliverability standards."
+                          : "All checks completed. Redirecting to your plain-English report and step-by-step fix guide..."}
                       </p>
                     </div>
                   </div>
