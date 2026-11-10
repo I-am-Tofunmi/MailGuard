@@ -1,4 +1,3 @@
-
 import { Routes, Route } from "react-router-dom";
 
 import LandingPage from "./pages/LandingPage";
@@ -21,6 +20,9 @@ function App() {
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/scan" element={<ScanPage />} />
+      <Route path="/results" element={<ResultPage />} />
+      <Route path="/results/:id" element={<ResultPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/check-email" element={<CheckEmailPage />} />
@@ -30,8 +32,6 @@ function App() {
       {/* Routes requiring authentication */}
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/scan" element={<ScanPage />} />
-        <Route path="/results" element={<ResultPage />} />
         <Route path="/celebration" element={<CelebrationPage />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/settings" element={<SettingsPage />} />
