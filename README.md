@@ -1,174 +1,189 @@
 # MailGuard
 
-**Privacy-First Email Auditing**
+MailGuard is a privacy-first email deliverability auditing platform built for small and medium-sized businesses. It inspects critical DNS authentication records, computes an actionable health score, and provides plain-English remediation guidance so business emails land in customer inboxes rather than spam folders.
 
-MailGuard is an email deliverability diagnostic tool designed to help African SMEs and business owners understand why their emails may be landing in spam and what they can do about it.
+---
 
-The goal is to make email diagnostics easier to understand by turning technical email-authentication results into clear explanations and practical recommendations.
+## Deployments
 
-## The Problem
+- **Frontend Application (Vercel):** [https://mailguard-client.vercel.app](https://mailguard-client.vercel.app)
+- **API Service (Render):** [https://mailguard-api.onrender.com](https://mailguard-api.onrender.com)
+- **API Health Check:** [https://mailguard-api.onrender.com/health](https://mailguard-api.onrender.com/health)
 
-Email deliverability tools can expose technical information without making it easy for non-technical business owners to understand what is wrong or how to fix it.
+---
 
-MailGuard aims to bridge that gap with a simple interface, understandable results, and actionable guidance.
+## Core Capabilities
 
-## How It Works
+- **Automated DNS Deliverability Engine:**
+  - **MX Verification:** Resolves mail exchange hosts and priority sorting to verify inbound mail routing.
+  - **SPF Analysis (RFC 7208):** Detects duplicate SPF record violations (`PermError`), identifies policy qualifiers (`-all`, `~all`, `?all`, `+all`), and extracts mechanism definitions.
+  - **DMARC Inspection (RFC 7489):** Verifies `_dmarc` policy alignment, policy enforcement states (`none`, `quarantine`, `reject`), and aggregate report routing (`rua`).
+  - **DKIM Discovery:** Concurrently probes common selectors (`default`, `google`, `selector1`, `k1`, etc.) while gracefully handling provider-specific custom selectors.
+- **Deliverability Scoring:** Computes an objective 0–100 rating based on MX routing, SPF authorization, DKIM signing, and DMARC enforcement.
+- **Plain-English AI Explanations:**
+  - Translates cryptic DNS terms into accessible, business-focused insights designed for non-technical domain owners.
+  - Generates copy-pasteable DNS records (Type, Host, Value) tailored for providers like cPanel, Cloudflare, and GoDaddy.
+  - Built with a deterministic rule-based baseline that operates with zero external dependencies and falls back seamlessly if an LLM is unreachable.
+- **Scan History & Persistence:**
+  - Authenticated scans persist to Supabase PostgreSQL with user-level isolation.
+  - Paginated history dashboard with search and status filtering.
+- **Guest & Authenticated Flows:** Immediate ad-hoc scans on the landing page with optional account creation for historical tracking.
 
-The planned user journey is:
+---
 
-1. Enter an email address or sending domain.
-2. Check relevant email-authentication records, including SPF, DKIM and DMARC.
-3. Review domain and blacklist-related diagnostic results.
-4. Understand potential issues through plain-English explanations.
-5. Follow recommended steps to address those issues and run another check.
+## Technology Stack
 
-## Current Features
+### Frontend (`client/`)
+- **Framework:** React 18, Vite
+- **Styling:** Tailwind CSS
+- **Routing:** React Router v6
+- **Icons:** Lucide React
+- **Auth Client:** `@supabase/supabase-js`
+- **Hosting:** Vercel (SPA with rewrite routing via `vercel.json`)
 
-- Responsive landing page and navigation.
-- User registration and login with Supabase Authentication.
-- Email confirmation and password recovery flows.
-- Protected dashboard and application routes.
-- Scan interface and results views.
-- Scan history interface with search and status filters.
-- Account settings for profile details and password changes.
-- Responsive layouts for mobile, tablet and desktop screens.
+### Backend (`server/`)
+- **Runtime & Server:** Node.js, Express 5
+- **DNS Resolution:** Native Node.js `dns.promises`
+- **Database Driver:** `pg` (PostgreSQL client pool with SSL)
+- **Database & Auth:** Supabase PostgreSQL & Supabase Auth
+- **Security & Logging:** Helmet, CORS, Morgan
+- **AI Integration:** Google Gemini / OpenAI / Anthropic with resilient timeout fallback
+- **Hosting:** Render (Web Service via `render.yaml`)
 
-**Development note:** The frontend is still being developed. Some scan, dashboard and history content currently uses demonstration data. The complete email diagnostic engine and persistent scan-history integration are not yet implemented. Notification preferences are currently local interface controls and are not persisted.
+---
 
-## Tech Stack
-
-| Area | Technology |
-|---|---|
-| Frontend | React, Vite |
-| Styling | Tailwind CSS |
-| Routing | React Router |
-| Icons | Lucide React, React Icons |
-| Authentication | Supabase Auth |
-| Database (planned) | PostgreSQL |
-| Backend (planned) | Node.js, Express.js |
-
-## Project Structure
+## Project Architecture
 
 ```text
 MailGuard/
-├── client/
-│   ├── public/
+├── client/                     # React + Vite frontend
 │   ├── src/
-│   │   ├── components/    # Reusable UI components
-│   │   ├── context/       # Authentication state and context
-│   │   ├── data/          # Demonstration data
-│   │   ├── lib/           # Supabase client configuration
-│   │   └── pages/         # Application pages
-│   ├── index.html
-│   ├── package.json
-│   └── vite.config.js
-├── docs/                  # Project documentation
-├── server/                # Backend development
+│   │   ├── components/         # Reusable UI elements (Hero, Navbar, Footer)
+│   │   ├── context/            # AuthContext and session state
+│   │   ├── lib/                # Supabase browser client
+│   │   ├── pages/              # Landing, Scan, Results, Dashboard, History
+│   │   └── services/           # API client (fetch wrapper with bearer token)
+│   ├── vercel.json             # SPA routing rewrite configuration
+│   └── package.json
+├── server/                     # Node.js + Express backend
+│   ├── src/
+│   │   ├── config/             # Database connection pool and Supabase config
+│   │   ├── controllers/        # Scan and History route controllers
+│   │   ├── middlewares/        # Supabase token authentication middleware
+│   │   ├── routes/             # API routes (/api/scan, /api/history)
+│   │   ├── services/           # DNS audit engine and AI explanation service
+│   │   ├── utils/              # Scoring algorithm
+│   │   └── server.js           # Express app entry point
+│   ├── render.yaml             # Render deployment blueprint
+│   └── package.json
+├── LICENSE                     # MIT License
 └── README.md
 ```
 
-## Getting Started
+---
+
+## Local Development Setup
 
 ### Prerequisites
+- Node.js (v18+)
+- npm
+- Supabase account and project
 
-- Node.js and npm
-- A Supabase project for authentication
-
-### 1. Clone the repository
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/I-am-Tofunmi/MailGuard.git
 cd MailGuard
 ```
 
-### 2. Install frontend dependencies
+### 2. Configure Backend Environment
+
+Navigate to the `server/` directory and configure environment variables:
 
 ```bash
-cd client
-npm install
+cd server
+cp .env.example .env
 ```
 
-### 3. Configure environment variables
-
-Create a `.env.local` file inside the `client/` directory:
+Edit `server/.env`:
 
 ```env
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+PORT=5000
+NODE_ENV=development
+CLIENT_URL=http://localhost:5173
+DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
+SUPABASE_URL=https://[PROJECT-REF].supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Optional: Add for LLM-enhanced diagnostic copy
+GEMINI_API_KEY=your_gemini_api_key
 ```
 
-Use your own Supabase project credentials. Do not commit `.env.local` or expose secret keys in frontend code.
-
-### 4. Start the development server
+Install backend dependencies and start the server:
 
 ```bash
+npm install
 npm run dev
 ```
 
-Vite will display the local development URL in your terminal.
+The API will listen on `http://localhost:5000`.
 
-### 5. Build for production
+### 3. Configure Frontend Environment
+
+In a separate terminal, navigate to the `client/` directory:
 
 ```bash
-npm run build
+cd client
+cp .env.example .env.local
 ```
 
-## Development Status
+Edit `client/.env.local`:
 
-MailGuard is under active development.
+```env
+VITE_SUPABASE_URL=https://[PROJECT-REF].supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+VITE_API_BASE_URL=http://localhost:5000/api
+```
 
-### Completed
+Install frontend dependencies and start the Vite development server:
 
-- Initial project structure and frontend setup.
-- Landing page and reusable landing-page components.
-- Responsive navigation.
-- Login and registration interfaces.
-- Supabase authentication integration.
-- Protected application routes.
-- Email confirmation and password recovery flows.
-- Dashboard interface.
-- Scan and results interfaces.
-- History interface with search and filters.
-- Account settings interface.
-- Responsive layout improvements across the application.
+```bash
+npm install
+npm run dev
+```
 
-### In Progress / Planned
+Open `http://localhost:5173` in your browser.
 
-- Backend API using Node.js and Express.js.
-- PostgreSQL database integration for application data.
-- Persistent business profiles and scan history.
-- Email-authentication diagnostics for SPF, DKIM and DMARC.
-- Domain and blacklist checks.
-- Plain-English diagnostic explanations and actionable recommendations.
-- Connecting the frontend scan workflow to the backend.
+---
 
-## Contributing
+## API Endpoints
 
-We use a branch-based workflow to keep development organized.
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/health` | Public | Service health probe |
+| `POST` | `/api/scan/audit` | Public / Optional Auth | Audits domain DNS and returns deliverability report |
+| `GET` | `/api/history` | Authenticated | Retrieves paginated scan history |
+| `GET` | `/api/history/:id` | Authenticated | Fetches a single scan record by ID |
+| `DELETE` | `/api/history/:id` | Authenticated | Deletes a scan record by ID |
 
-- `main` — stable code.
-- `dev` — active integration and development branch.
-- `feature/your-feature-name` — individual feature branches.
+---
 
-### Workflow
+## Production Builds
 
-1. Clone the repository.
-2. Switch to the `dev` branch.
-3. Create a feature branch for your work.
-4. Implement and test your changes.
-5. Commit your work with a descriptive message.
-6. Push your feature branch.
-7. Open a pull request into `dev` and wait for review.
+To verify production builds locally:
 
-Avoid pushing directly to `main`. Use pull requests so changes can be reviewed before merging.
+```bash
+# Build frontend
+npm --prefix client run build
 
-## Team
+# Start production server
+cd server
+npm start
+```
 
-- **Tofunmi Omololu** — Frontend development, authentication integration and database planning.
-- **Samuel Oluwafikunayomi** — Backend development and database support.
-- **Sanni Yusuf Olamilekan** — AI/ML engine and backend support.
+---
 
-## Resources
+## License
 
-- [UI/UX Design Document](https://drive.google.com/file/d/1sjKLIvg5Rc8ixGE2jlacgDhE8EPazQKR/view?usp=drive_link)
-- [Project Action Plan](https://drive.google.com/file/d/1nz_vPu7bFRoBKqRILsL2vQHmqtwI5GG9/view?usp=drive_link)
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
