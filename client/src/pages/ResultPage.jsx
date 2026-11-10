@@ -3,6 +3,7 @@ import { useLocation, useParams, useSearchParams, Link, useNavigate } from "reac
 import {
   Check,
   CheckCircle2,
+  CheckCheck,
   AlertTriangle,
   Info,
   ArrowRight,
@@ -18,16 +19,58 @@ import {
   Copy,
   ChevronDown,
   ChevronUp,
+  Send,
+  Mail,
+  X,
 } from "lucide-react";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { getScanById } from "../services/api";
 
+const REGISTRAR_GUIDES = [
+  {
+    id: "whogohost",
+    name: "Whogohost / Truehost",
+    steps: [
+      "Log in to your Client Area and click Domains > Manage DNS.",
+      "Click Add New Record (choose TXT).",
+      "Enter the Host name (@ or _dmarc), paste the value, and click Save Changes.",
+    ],
+  },
+  {
+    id: "cpanel",
+    name: "cPanel (Zone Editor)",
+    steps: [
+      "Log in to cPanel and open Zone Editor.",
+      "Click Manage next to your domain, then click + Add Record > Add TXT Record.",
+      "Enter the Valid Zone Name, paste the TXT string, and save.",
+    ],
+  },
+  {
+    id: "namecheap",
+    name: "Namecheap",
+    steps: [
+      "Go to Domain List > click Manage next to your domain.",
+      "Switch to the Advanced DNS tab and click Add New Record.",
+      "Select TXT Record, enter Host and Value, and click the green checkmark.",
+    ],
+  },
+  {
+    id: "cloudflare",
+    name: "Cloudflare",
+    steps: [
+      "Log in to Cloudflare Dashboard and select your domain.",
+      "Go to DNS > Records and click Add record.",
+      "Select Type TXT, enter Name (@ or _dmarc), paste the Content, and click Save.",
+    ],
+  },
+];
+
 const issueGuides = {
   mx: {
     title: "Your domain is not set up to receive incoming emails.",
-    severity: "Inbound Email Warning",
+    severity: "Mailbox Destination (MX)",
     impact: "HIGH",
     description:
       "No Mail Exchange (MX) records were detected. Customer inquiries, quote requests, and email replies sent to your business will bounce or fail to arrive.",
@@ -47,7 +90,7 @@ const issueGuides = {
   },
   spf: {
     title: "Your domain needs an authorized sender policy (SPF).",
-    severity: "Email Authentication Warning",
+    severity: "Authorized Senders List (SPF)",
     impact: "HIGH",
     description:
       "Without a proper SPF record, inbox providers like Gmail and Yahoo cannot verify that your emails genuinely come from your business, causing your proposals and invoices to land in spam.",
@@ -67,7 +110,7 @@ const issueGuides = {
   },
   dkim: {
     title: "Your emails need a digital signature (DKIM).",
-    severity: "Security Signature Warning",
+    severity: "Official Digital Stamp (DKIM)",
     impact: "HIGH",
     description:
       "DKIM adds a tamper-proof digital signature to every email you send. Without it, spam filters may suspect your emails have been altered or forged in transit.",
@@ -87,7 +130,7 @@ const issueGuides = {
   },
   dmarc: {
     title: "Your domain needs a security guard policy (DMARC).",
-    severity: "Domain Protection Warning",
+    severity: "Security Guard Rules (DMARC)",
     impact: "MEDIUM",
     description:
       "DMARC tells receiving inboxes what to do when someone tries to forge an email using your business name. Without it, scammers can freely spoof your domain to defraud your clients.",
@@ -115,7 +158,7 @@ function buildIssuesFromResults(results) {
   if (!results.mx?.hasMx || results.mx?.status === "error") {
     list.push({
       id: "mx",
-      title: "MX Records",
+      title: "Mailbox Destination (MX)",
       status: "failed",
       description: results.mx?.message || "No MX records found.",
       guide: issueGuides.mx,
@@ -126,7 +169,7 @@ function buildIssuesFromResults(results) {
   if (!results.spf?.hasSpf || results.spf?.rfcViolation || results.spf?.status !== "pass") {
     list.push({
       id: "spf",
-      title: "SPF Record",
+      title: "Authorized Senders List (SPF)",
       status: results.spf?.rfcViolation || results.spf?.status === "error" ? "failed" : "warning",
       description: results.spf?.message || "SPF record needs review.",
       guide: {
@@ -140,7 +183,7 @@ function buildIssuesFromResults(results) {
   if (results.dkim?.status !== "pass") {
     list.push({
       id: "dkim",
-      title: "DKIM",
+      title: "Official Digital Stamp (DKIM)",
       status: results.dkim?.status === "indeterminate" ? "warning" : "failed",
       description: results.dkim?.message || "DKIM record needs verification.",
       guide: {
@@ -155,7 +198,7 @@ function buildIssuesFromResults(results) {
   if (!results.dmarc?.hasDmarc || dmarcPolicy === "none" || results.dmarc?.status !== "pass") {
     list.push({
       id: "dmarc",
-      title: "DMARC Policy",
+      title: "Security Guard Rules (DMARC)",
       status: !results.dmarc?.hasDmarc ? "failed" : "warning",
       description: results.dmarc?.message || "DMARC policy needs enforcement.",
       guide: {
@@ -192,6 +235,9 @@ function ResultPage() {
   const [fetchError, setFetchError] = useState(null);
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [showAllSteps, setShowAllSteps] = useState(true);
+  const [selectedRegistrar, setSelectedRegistrar] = useState("whogohost");
+  const [showHandoverModal, setShowHandoverModal] = useState(false);
+  const [handoverCopied, setHandoverCopied] = useState(false);
 
   const scanId = params.id || searchParams.get("id");
 
@@ -266,6 +312,53 @@ function ResultPage() {
     } catch (err) {
       console.error("Failed to copy DNS value:", err);
     }
+  };
+
+  const activeRegistrarGuide =
+    REGISTRAR_GUIDES.find((g) => g.id === selectedRegistrar) || REGISTRAR_GUIDES[0];
+
+  const generateHandoverText = () => {
+    let recordsList = "";
+    if (explanation?.steps && explanation.steps.length > 0) {
+      recordsList = explanation.steps
+        .map(
+          (st, i) =>
+            `${i + 1}. Record Type: ${st.recordType || "TXT"}\n   Host / Name: ${st.host || "@"}${
+              st.priority ? `\n   Priority: ${st.priority}` : ""
+            }\n   Value: ${st.value || "(See instructions: " + st.title + ")"}`
+        )
+        .join("\n\n");
+    } else {
+      recordsList = "All core DNS records (MX, SPF, DKIM, DMARC) are currently configured properly.";
+    }
+
+    return `Hi,
+
+MailGuard ran a deliverability check on our domain (${domain || "our domain"}) and found our score is ${score}/100.
+Our invoices and proposals are at risk of going to spam because our email authentication records need to be updated.
+
+Please log in to our domain/DNS provider and publish or update these DNS records:
+${recordsList}
+
+Once done, we can re-verify at https://mail-guard-azure.vercel.app.
+
+Thanks!`;
+  };
+
+  const handleCopyHandover = async () => {
+    try {
+      await navigator.clipboard.writeText(generateHandoverText());
+      setHandoverCopied(true);
+      setTimeout(() => setHandoverCopied(false), 3500);
+    } catch (err) {
+      console.error("Failed to copy handover note:", err);
+    }
+  };
+
+  const handleEmailHandover = () => {
+    const subject = `Action Required: DNS Fixes for ${domain || "our domain"}`;
+    const body = generateHandoverText();
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   // Loading state
@@ -506,7 +599,7 @@ function ResultPage() {
               {/* Copy-pasteable DNS Checklist */}
               {explanation.steps && explanation.steps.length > 0 && (
                 <div className="mt-5 border-t border-gray-100 pt-5">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                     <div className="flex items-center gap-2">
                       <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-gray-800">
                         Required DNS Actions
@@ -516,23 +609,79 @@ function ResultPage() {
                       </span>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setShowAllSteps(!showAllSteps)}
-                      className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 inline-flex items-center gap-1 cursor-pointer"
-                    >
-                      <span>{showAllSteps ? "Collapse Checklist" : "Expand Checklist"}</span>
-                      {showAllSteps ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                    </button>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => setShowHandoverModal(true)}
+                        className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-emerald-800 px-3 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:bg-emerald-900 cursor-pointer"
+                      >
+                        <Send size={13} />
+                        <span>Send to My Web Designer / Developer</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowAllSteps(!showAllSteps)}
+                        className="text-xs font-semibold text-gray-600 hover:text-gray-900 inline-flex items-center gap-1 cursor-pointer px-2.5 py-1.5 rounded-lg border border-gray-200 bg-white"
+                      >
+                        <span>{showAllSteps ? "Collapse Checklist" : "Expand Checklist"}</span>
+                        {showAllSteps ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </button>
+                    </div>
                   </div>
 
                   {showAllSteps && (
-                    <div className="space-y-3">
-                      <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-3 sm:p-4 text-xs text-blue-900 flex items-start gap-2.5">
-                        <Info size={16} className="shrink-0 mt-0.5 text-blue-700" />
-                        <p className="leading-relaxed">
-                          <strong>How to add these records:</strong> Log in to where you bought your domain (like Whogohost, Truehost, Namecheap, or Cloudflare), open <strong>DNS Management</strong>, and paste these records.
-                        </p>
+                    <div className="space-y-4">
+                      {/* Interactive Registrar Tabs */}
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-3.5 sm:p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2.5">
+                          <div className="flex items-center gap-2">
+                            <Server size={15} className="text-emerald-700 shrink-0" />
+                            <span className="text-xs sm:text-sm font-bold text-[#071B36]">
+                              How to add these records in your domain dashboard:
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-gray-500">
+                            Select your provider:
+                          </span>
+                        </div>
+
+                        {/* Horizontal Tab Bar */}
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
+                          {REGISTRAR_GUIDES.map((tab) => (
+                            <button
+                              key={tab.id}
+                              type="button"
+                              onClick={() => setSelectedRegistrar(tab.id)}
+                              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                                selectedRegistrar === tab.id
+                                  ? "bg-emerald-700 text-white shadow-xs"
+                                  : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300"
+                              }`}
+                            >
+                              {tab.name}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Step Details */}
+                        <div className="mt-2.5 rounded-lg border border-emerald-100 bg-white p-3">
+                          <p className="text-xs font-bold text-emerald-950 mb-2">
+                            Follow these 3 steps in {activeRegistrarGuide.name}:
+                          </p>
+                          <div className="space-y-2">
+                            {activeRegistrarGuide.steps.map((st, i) => (
+                              <div key={i} className="flex items-start gap-2.5">
+                                <span className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-[10px] font-bold text-emerald-800 mt-0.5">
+                                  {i + 1}
+                                </span>
+                                <p className="text-xs text-gray-700 leading-relaxed">
+                                  {st}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
 
                       {explanation.steps.map((st, idx) => (
@@ -625,16 +774,21 @@ function ResultPage() {
 
         {/* Diagnostic Protocol Grid (MX, SPF, DMARC, DKIM) */}
         {results && (
-          <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {/* MX Records */}
-            <div className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col justify-between">
+            <div className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col justify-between shadow-xs">
               <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    MX Records
-                  </span>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold uppercase tracking-wider text-gray-800 block">
+                      Mailbox Destination (MX)
+                    </span>
+                    <p className="mt-0.5 text-[11px] text-gray-500 leading-snug">
+                      Tells the internet where to deliver emails sent to your company.
+                    </p>
+                  </div>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                       results.mx?.hasMx
                         ? "bg-emerald-100 text-emerald-800"
                         : "bg-red-100 text-red-800"
@@ -643,7 +797,7 @@ function ResultPage() {
                     {results.mx?.hasMx ? "Active" : "Missing"}
                   </span>
                 </div>
-                <p className="mt-2 text-xs text-gray-600 leading-relaxed break-words">
+                <p className="mt-3 text-xs text-gray-600 leading-relaxed break-words">
                   {results.mx?.message || "Mail exchange routing"}
                 </p>
               </div>
@@ -655,14 +809,19 @@ function ResultPage() {
             </div>
 
             {/* SPF Record */}
-            <div className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col justify-between">
+            <div className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col justify-between shadow-xs">
               <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    SPF Record
-                  </span>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold uppercase tracking-wider text-gray-800 block">
+                      Authorized Senders List (SPF)
+                    </span>
+                    <p className="mt-0.5 text-[11px] text-gray-500 leading-snug">
+                      A VIP guest list showing Gmail and Yahoo which servers are permitted to send emails on your behalf.
+                    </p>
+                  </div>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                       results.spf?.status === "pass"
                         ? "bg-emerald-100 text-emerald-800"
                         : results.spf?.status === "warning"
@@ -673,7 +832,7 @@ function ResultPage() {
                     {results.spf?.qualifier || (results.spf?.hasSpf ? "Detected" : "Missing")}
                   </span>
                 </div>
-                <p className="mt-2 text-xs text-gray-600 leading-relaxed break-words">
+                <p className="mt-3 text-xs text-gray-600 leading-relaxed break-words">
                   {results.spf?.message || "Sender Policy Framework"}
                 </p>
               </div>
@@ -687,14 +846,19 @@ function ResultPage() {
             </div>
 
             {/* DKIM Signatures */}
-            <div className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col justify-between">
+            <div className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col justify-between shadow-xs">
               <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    DKIM Keys
-                  </span>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold uppercase tracking-wider text-gray-800 block">
+                      Official Digital Stamp (DKIM)
+                    </span>
+                    <p className="mt-0.5 text-[11px] text-gray-500 leading-snug">
+                      A tamper-proof digital wax seal proving that invoices or quotes weren't altered along the way.
+                    </p>
+                  </div>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                       results.dkim?.discovered
                         ? "bg-emerald-100 text-emerald-800"
                         : results.dkim?.status === "indeterminate"
@@ -707,7 +871,7 @@ function ResultPage() {
                       : "Custom Selector"}
                   </span>
                 </div>
-                <p className="mt-2 text-xs text-gray-600 leading-relaxed break-words">
+                <p className="mt-3 text-xs text-gray-600 leading-relaxed break-words">
                   {results.dkim?.message || "DKIM verification"}
                 </p>
               </div>
@@ -719,14 +883,19 @@ function ResultPage() {
             </div>
 
             {/* DMARC Policy */}
-            <div className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col justify-between">
+            <div className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col justify-between shadow-xs">
               <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    DMARC Policy
-                  </span>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold uppercase tracking-wider text-gray-800 block">
+                      Security Guard Rules (DMARC)
+                    </span>
+                    <p className="mt-0.5 text-[11px] text-gray-500 leading-snug">
+                      Instructions to mailboxes on whether to reject or quarantine fake emails sent by scammers using your business name.
+                    </p>
+                  </div>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                       results.dmarc?.policy === "reject" || results.dmarc?.policy === "quarantine"
                         ? "bg-emerald-100 text-emerald-800"
                         : results.dmarc?.policy === "none"
@@ -737,7 +906,7 @@ function ResultPage() {
                     {results.dmarc?.policy ? `p=${results.dmarc.policy}` : "Missing"}
                   </span>
                 </div>
-                <p className="mt-2 text-xs text-gray-600 leading-relaxed break-words">
+                <p className="mt-3 text-xs text-gray-600 leading-relaxed break-words">
                   {results.dmarc?.message || "Domain protection enforcement"}
                 </p>
               </div>
@@ -934,6 +1103,79 @@ function ResultPage() {
           </div>
         )}
       </main>
+
+      {/* "Send to My Web Designer / Developer" Modal */}
+      {showHandoverModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs"
+          onClick={() => setShowHandoverModal(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150 text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800">
+                  <Send size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#071B36]">
+                    Send to My Web Designer / Developer
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Forward this ready-made note via WhatsApp, Slack, or Email
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowHandoverModal(false)}
+                className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 cursor-pointer"
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mt-4">
+              <p className="text-xs text-gray-600 mb-2 font-medium">
+                Preview of developer handover message:
+              </p>
+              <div className="rounded-xl border border-gray-200 bg-[#F9FBFE] p-3.5 max-h-56 overflow-y-auto font-mono text-xs text-gray-800 whitespace-pre-wrap select-all leading-relaxed">
+                {generateHandoverText()}
+              </div>
+            </div>
+
+            {handoverCopied && (
+              <div className="mt-3 flex items-center gap-2 rounded-lg bg-emerald-100 px-3 py-2 text-xs font-semibold text-emerald-900 animate-in fade-in">
+                <CheckCheck size={16} className="shrink-0 text-emerald-700" />
+                <span>Copied! Send this to your web manager via WhatsApp or Email.</span>
+              </div>
+            )}
+
+            <div className="mt-5 flex flex-col sm:flex-row items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={handleCopyHandover}
+                className="w-full sm:w-auto inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-xs transition hover:bg-emerald-800 cursor-pointer"
+              >
+                {handoverCopied ? <CheckCheck size={16} /> : <Copy size={16} />}
+                <span>{handoverCopied ? "Copied to Clipboard!" : "Copy Developer Note"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleEmailHandover}
+                className="w-full sm:w-auto inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-xs sm:text-sm font-semibold text-gray-700 transition hover:bg-gray-50 cursor-pointer"
+              >
+                <Mail size={16} />
+                <span>Email to Developer</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
