@@ -21,28 +21,51 @@ app.use(helmet());
 // Logging
 app.use(morgan('dev'));
 
-// CORS configuration
-const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+// Dynamic CORS configuration
+const defaultOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000',
+];
+
+const configuredOrigins = (process.env.CLIENT_URL || '')
   .split(',')
-  .map((origin) => origin.trim());
+  .map((origin) => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
+const allowedOrigins = Array.from(new Set([...defaultOrigins, ...configuredOrigins]));
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow non-browser requests (Postman, curl, server-to-server)
+    // Allow non-browser requests (Postman, curl, server-to-server, Render health probes)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+    const normalizedOrigin = origin.replace(/\/$/, '');
+
+    // Allow if origin is explicitly in allowed list or if wildcard is enabled
+    if (
+      allowedOrigins.includes(normalizedOrigin) ||
+      allowedOrigins.includes('*') ||
+      (process.env.CLIENT_URL && normalizedOrigin === process.env.CLIENT_URL.replace(/\/$/, ''))
+    ) {
       return callback(null, true);
     }
 
-    // In non-production, permit any localhost origin
-    if (process.env.NODE_ENV !== 'production' && /^http:\/\/localhost(:\d+)?$/.test(origin)) {
+    // In development mode, permit any localhost / 127.0.0.1 origin regardless of port
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)
+    ) {
       return callback(null, true);
     }
 
     return callback(new Error(`Origin ${origin} not allowed by CORS policy`));
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  optionsSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));
@@ -102,10 +125,11 @@ app.use((err, req, res, next) => {
 
 // Start HTTP server
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`MailGuard backend server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
+  app.listen(PORT, HOST, () => {
+    console.log(`MailGuard backend server running on http://${HOST}:${PORT} [${process.env.NODE_ENV || 'development'}]`);
   });
 }
 
