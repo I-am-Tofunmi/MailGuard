@@ -14,6 +14,10 @@ import {
   RotateCcw,
   LoaderCircle,
   MailSearch,
+  Sparkles,
+  Copy,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 import Navbar from "../components/Navbar";
@@ -176,6 +180,8 @@ function ResultPage() {
   const [scanResult, setScanResult] = useState(initialResult);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
+  const [copiedIndex, setCopiedIndex] = useState(null);
+  const [showAllSteps, setShowAllSteps] = useState(true);
 
   const scanId = params.id || searchParams.get("id");
 
@@ -212,6 +218,7 @@ function ResultPage() {
     dkim: scanResult?.dkim,
   };
 
+  const explanation = scanResult?.explanation;
   const issues = buildIssuesFromResults(results);
 
   const [currentIssue, setCurrentIssue] = useState(0);
@@ -239,6 +246,16 @@ function ResultPage() {
     navigate(`/scan?domain=${encodeURIComponent(domain)}`, {
       state: { domain },
     });
+  };
+
+  const handleCopyValue = async (val, idx) => {
+    try {
+      await navigator.clipboard.writeText(val);
+      setCopiedIndex(idx);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy DNS value:", err);
+    }
   };
 
   // Loading state
@@ -417,6 +434,164 @@ function ResultPage() {
             </button>
           </div>
         </div>
+
+        {/* AI Deliverability Breakdown Section */}
+        {explanation && (
+          <div className="mb-7 overflow-hidden rounded-2xl border border-emerald-200 bg-white shadow-sm">
+            {/* Header with Urgency Badge */}
+            <div className="border-b border-emerald-100 bg-gradient-to-r from-emerald-50 via-teal-50/50 to-white px-5 py-4 sm:px-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-700 text-white shadow-xs">
+                    <Sparkles size={17} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-sm sm:text-base font-bold text-[#071B36]">
+                        AI Deliverability Diagnosis
+                      </h2>
+                      {explanation.source === "ai" && (
+                        <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                          AI Generated
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-500">
+                      Plain-English guidance designed for business owners
+                    </p>
+                  </div>
+                </div>
+
+                {/* Urgency Badge */}
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
+                    explanation.urgency === "High"
+                      ? "bg-red-100 text-red-800 border border-red-200"
+                      : explanation.urgency === "Medium"
+                      ? "bg-amber-100 text-amber-800 border border-amber-200"
+                      : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                  }`}
+                >
+                  {explanation.urgency === "High" && <AlertTriangle size={13} className="shrink-0" />}
+                  {explanation.urgency === "Medium" && <Info size={13} className="shrink-0" />}
+                  {explanation.urgency === "Low" && <CheckCircle2 size={13} className="shrink-0" />}
+                  {explanation.urgency === "High"
+                    ? "Action Required"
+                    : explanation.urgency === "Medium"
+                    ? "Attention Recommended"
+                    : "Good Standing"}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-5 sm:p-6">
+              {/* Executive Summary */}
+              <p className="text-sm sm:text-base leading-relaxed text-gray-800 break-words">
+                {explanation.summary}
+              </p>
+
+              {/* Copy-pasteable DNS Checklist */}
+              {explanation.steps && explanation.steps.length > 0 && (
+                <div className="mt-5 border-t border-gray-100 pt-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-gray-800">
+                        Required DNS Actions
+                      </h3>
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
+                        {explanation.steps.length} {explanation.steps.length === 1 ? "step" : "steps"}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowAllSteps(!showAllSteps)}
+                      className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>{showAllSteps ? "Collapse Checklist" : "Expand Checklist"}</span>
+                      {showAllSteps ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </button>
+                  </div>
+
+                  {showAllSteps && (
+                    <div className="space-y-3">
+                      {explanation.steps.map((st, idx) => (
+                        <div
+                          key={idx}
+                          className="rounded-xl border border-gray-200 bg-[#F9FBFE] p-4 transition hover:border-emerald-200"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-[11px] font-bold text-white">
+                                {st.step || idx + 1}
+                              </span>
+                              <h4 className="text-xs sm:text-sm font-bold text-[#071B36] break-words">
+                                {st.title}
+                              </h4>
+                            </div>
+                            <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 shrink-0">
+                              {st.recordType || "TXT"}
+                            </span>
+                          </div>
+
+                          <p className="mt-1 text-xs text-gray-600 sm:pl-7 leading-relaxed break-words">
+                            {st.explanation}
+                          </p>
+
+                          {st.value && (
+                            <div className="mt-3 sm:pl-7">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border border-gray-200 bg-white p-2.5">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2 text-[10px] uppercase font-bold text-gray-400">
+                                    <span>
+                                      Host: <span className="font-mono text-gray-700 select-all">{st.host || "@"}</span>
+                                    </span>
+                                    {st.priority && (
+                                      <span>
+                                        • Priority: <span className="font-mono text-gray-700">{st.priority}</span>
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="mt-0.5 font-mono text-xs text-emerald-950 break-all select-all">
+                                    {st.value}
+                                  </p>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyValue(st.value, idx)}
+                                  className="inline-flex min-h-[36px] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800 cursor-pointer"
+                                >
+                                  {copiedIndex === idx ? (
+                                    <>
+                                      <Check size={13} className="text-emerald-700" />
+                                      <span className="text-emerald-700">Copied!</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy size={13} />
+                                      <span>Copy Value</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+
+                              {st.location && (
+                                <p className="mt-1.5 text-[11px] text-gray-500">
+                                  Where to add: <span className="font-medium text-gray-700">{st.location}</span>
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Diagnostic Protocol Grid (MX, SPF, DMARC, DKIM) */}
         {results && (

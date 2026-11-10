@@ -52,6 +52,7 @@ async function getHistory(req, res) {
       ...row,
       summary: typeof row.summary === 'string' ? safeParseJson(row.summary) : row.summary,
       results: typeof row.results === 'string' ? safeParseJson(row.results) : row.results,
+      explanation: typeof row.explanation === 'string' ? safeParseJson(row.explanation) : row.explanation,
     }));
 
     return res.status(200).json({
@@ -108,6 +109,7 @@ async function getHistoryById(req, res) {
       ...row,
       summary: typeof row.summary === 'string' ? safeParseJson(row.summary) : row.summary,
       results: typeof row.results === 'string' ? safeParseJson(row.results) : row.results,
+      explanation: typeof row.explanation === 'string' ? safeParseJson(row.explanation) : row.explanation,
     };
 
     return res.status(200).json({

@@ -1,10 +1,12 @@
 const { auditDomain } = require('../services/dnsService');
 const { calculateScore } = require('../utils/scoreCalculator');
+const { generateExplanation } = require('../services/aiService');
 const db = require('../config/db');
 
 /**
  * Controller to handle domain audit requests.
  * Runs DNS deliverability checks, computes deliverability score,
+ * synthesizes plain-English AI/rule-based explanation,
  * and persists the scan into the database if the user is authenticated.
  *
  * POST /api/scan/audit
@@ -35,29 +37,62 @@ async function handleDomainScan(req, res) {
     // Calculate score, summary metrics, and scan status
     const { score, summary, status } = calculateScore(results);
 
+    // Generate plain-English AI/rule-based deliverability explanation
+    const explanation = await generateExplanation(auditResult.domain, results, score);
+
     let scanId = null;
     let createdAt = auditResult.timestamp;
 
     // If request has an authenticated user, persist the scan
     if (req.user && req.user.id) {
-      const insertSql = `
-        INSERT INTO scans (user_id, domain, status, score, summary, results)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING id, created_at;
-      `;
-      const insertParams = [
-        req.user.id,
-        auditResult.domain,
-        status,
-        score,
-        JSON.stringify(summary),
-        JSON.stringify(results),
-      ];
+      try {
+        const insertWithExplanationSql = `
+          INSERT INTO scans (user_id, domain, status, score, summary, results, explanation)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
+          RETURNING id, created_at;
+        `;
+        const insertParams = [
+          req.user.id,
+          auditResult.domain,
+          status,
+          score,
+          JSON.stringify(summary),
+          JSON.stringify(results),
+          JSON.stringify(explanation),
+        ];
 
-      const dbRes = await db.query(insertSql, insertParams);
-      if (dbRes.rows && dbRes.rows.length > 0) {
-        scanId = dbRes.rows[0].id;
-        createdAt = dbRes.rows[0].created_at;
+        const dbRes = await db.query(insertWithExplanationSql, insertParams);
+        if (dbRes.rows && dbRes.rows.length > 0) {
+          scanId = dbRes.rows[0].id;
+          createdAt = dbRes.rows[0].created_at;
+        }
+      } catch (insertErr) {
+        // Fallback to inserting without explanation column if schema does not include it yet
+        if (
+          insertErr.code === '42703' ||
+          (insertErr.message && insertErr.message.includes('explanation'))
+        ) {
+          const fallbackSql = `
+            INSERT INTO scans (user_id, domain, status, score, summary, results)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING id, created_at;
+          `;
+          const fallbackParams = [
+            req.user.id,
+            auditResult.domain,
+            status,
+            score,
+            JSON.stringify(summary),
+            JSON.stringify(results),
+          ];
+          const fallbackRes = await db.query(fallbackSql, fallbackParams);
+          if (fallbackRes.rows && fallbackRes.rows.length > 0) {
+            scanId = fallbackRes.rows[0].id;
+            createdAt = fallbackRes.rows[0].created_at;
+          }
+        } else {
+          throw insertErr;
+        }
       }
     }
 
@@ -69,6 +104,7 @@ async function handleDomainScan(req, res) {
       score,
       summary,
       results,
+      explanation,
       created_at: createdAt,
       // Retain top-level checks for compatibility with frontend components
       mx: results.mx,
@@ -83,6 +119,7 @@ async function handleDomainScan(req, res) {
         score,
         summary,
         results,
+        explanation,
         created_at: createdAt,
       },
     });
