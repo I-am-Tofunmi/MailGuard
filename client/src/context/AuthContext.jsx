@@ -87,6 +87,17 @@ export function AuthProvider({ children }) {
     return data?.user;
   };
 
+  const signInWithProvider = async (provider) => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+    if (error) throw error;
+    return data;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -96,6 +107,7 @@ export function AuthProvider({ children }) {
         signOut,
         refreshUser,
         updateUserMetadata,
+        signInWithProvider,
       }}
     >
       {children}

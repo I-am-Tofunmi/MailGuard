@@ -6,18 +6,40 @@ import {
   ShieldCheck,
   Eye,
   EyeOff,
+  LoaderCircle,
 } from "lucide-react";
 import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../context/AuthContext";
 import AuthIllustration from "../components/AuthIllustration";
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { signInWithProvider } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(null);
   const [error, setError] = useState("");
+
+  const handleOAuthSignIn = async (provider) => {
+    setError("");
+    setOauthLoading(provider);
+
+    try {
+      await signInWithProvider(provider);
+    } catch (err) {
+      console.error(`OAuth login error (${provider}):`, err);
+      setError(
+        err.message ||
+          `Unable to sign in with ${
+            provider === "azure" ? "Microsoft" : "Google"
+          }. Please try again.`
+      );
+      setOauthLoading(null);
+    }
+  };
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -186,35 +208,52 @@ function LoginPage() {
                 <hr className="flex-1 border-gray-300" />
               </div>
 
-              <div className="flex justify-center gap-5">
+              <div className="flex flex-col gap-2.5 sm:flex-row">
                 <button
                   type="button"
-                  disabled
-                  title="Google sign-in coming soon"
-                  className="flex items-center gap-2 rounded-md border border-gray-300 px-5 py-2 opacity-50"
+                  onClick={() => handleOAuthSignIn("google")}
+                  disabled={loading || Boolean(oauthLoading)}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:border-gray-400 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <FcGoogle className="h-5 w-5" />
-                  Google
+                  {oauthLoading === "google" ? (
+                    <>
+                      <LoaderCircle className="h-4 w-4 animate-spin text-emerald-700" />
+                      <span>Connecting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FcGoogle className="h-4 w-4 shrink-0" />
+                      <span>Continue with Google</span>
+                    </>
+                  )}
                 </button>
 
                 <button
                   type="button"
-                  disabled
-                  title="Microsoft sign-in coming soon"
-                  className="flex items-center gap-2 rounded-md border border-gray-300 px-5 py-2 opacity-50"
+                  onClick={() => handleOAuthSignIn("azure")}
+                  disabled={loading || Boolean(oauthLoading)}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:border-gray-400 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 23 23"
-                  >
-                    <rect x="0" y="0" width="10.5" height="10.5" fill="#f25022" />
-                    <rect x="12.5" y="0" width="10.5" height="10.5" fill="#7fba00" />
-                    <rect x="0" y="12.5" width="10.5" height="10.5" fill="#00a4ef" />
-                    <rect x="12.5" y="12.5" width="10.5" height="10.5" fill="#ffb900" />
-                  </svg>
-                  Microsoft
+                  {oauthLoading === "azure" ? (
+                    <>
+                      <LoaderCircle className="h-4 w-4 animate-spin text-emerald-700" />
+                      <span>Connecting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-3.5 w-3.5 shrink-0"
+                        viewBox="0 0 23 23"
+                      >
+                        <rect x="0" y="0" width="10.5" height="10.5" fill="#f25022" />
+                        <rect x="12.5" y="0" width="10.5" height="10.5" fill="#7fba00" />
+                        <rect x="0" y="12.5" width="10.5" height="10.5" fill="#00a4ef" />
+                        <rect x="12.5" y="12.5" width="10.5" height="10.5" fill="#ffb900" />
+                      </svg>
+                      <span>Continue with Microsoft</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
