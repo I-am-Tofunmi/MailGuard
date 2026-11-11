@@ -256,17 +256,28 @@ function ScanPage() {
     if (!scanComplete || !completedResultRef.current) return;
 
     const res = completedResultRef.current;
+    const targetDomain = res.domain || domain;
+
+    // Strict guard: NEVER navigate to results if webmail domain!
+    if (isWebmailDomain(targetDomain)) {
+      setIsWebmailBlocked(true);
+      setBlockedDomain(sanitizeDomain(targetDomain) || "gmail.com");
+      setIsScanning(false);
+      setScanComplete(false);
+      completedResultRef.current = null;
+      return;
+    }
 
     const timer = setTimeout(() => {
       if (res.id) {
         navigate(`/results/${res.id}`, {
           replace: true,
-          state: { result: res, domain: res.domain || domain },
+          state: { result: res, domain: targetDomain },
         });
       } else {
         navigate("/results", {
           replace: true,
-          state: { result: res, domain: res.domain || domain },
+          state: { result: res, domain: targetDomain },
         });
       }
     }, 1100);
@@ -385,13 +396,26 @@ function ScanPage() {
     }
   };
 
+  if (isWebmailBlocked) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <WebmailWarningModal
+          isOpen={true}
+          detectedDomain={blockedDomain || "gmail.com"}
+          onClose={() => navigate("/", { replace: true })}
+          onTryCustomDomain={() => navigate("/", { replace: true })}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-[#F7F9FE]">
       <Navbar />
 
       <main className="flex flex-1 flex-col items-center px-4 pb-16 pt-8 sm:px-8 sm:pt-10">
-        {/* If webmail is blocked, or no domain provided yet: Direct Domain Entry Form */}
-        {(!domain || isWebmailBlocked) && !isScanning ? (
+        {/* If no domain provided yet: Direct Domain Entry Form */}
+        {!domain && !isScanning ? (
           <div className="w-full max-w-[620px] rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8 text-center mt-4">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
               <Globe size={26} className="text-emerald-700" />

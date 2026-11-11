@@ -35,8 +35,15 @@ function HeroSection() {
   };
 
   const handleTryCustomDomain = () => {
+    try {
+      sessionStorage.removeItem("mailguard_scan_result");
+      localStorage.removeItem("mailguard_cached_domain");
+    } catch {
+      // ignore storage errors
+    }
     setDomain("");
     setError("");
+    setBlockedDomain("");
     setIsWebmailModalOpen(false);
     inputRef.current?.focus();
   };
@@ -71,6 +78,13 @@ function HeroSection() {
 
     // Intercept public free webmail providers (gmail.com, yahoo.com, etc.)
     if (isPublicWebmailDomain(sanitized)) {
+      // Clear any cached/stored scan results
+      try {
+        sessionStorage.removeItem("mailguard_scan_result");
+        localStorage.removeItem("mailguard_cached_domain");
+      } catch {
+        // ignore storage errors
+      }
       setBlockedDomain(sanitized);
       setIsWebmailModalOpen(true);
       return;

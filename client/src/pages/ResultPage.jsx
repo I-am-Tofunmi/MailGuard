@@ -28,6 +28,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { getScanById } from "../services/api";
 import { sanitizeDomain, isWebmailDomain } from "../utils/domainUtils";
+import WebmailWarningModal from "../components/WebmailWarningModal";
 
 const REGISTRAR_GUIDES = [
   {
@@ -228,10 +229,14 @@ function ResultPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // 1. Retrieve initial result from router state if available
+  // 1. Domain detection: extract candidate domain synchronously before executing anything
   const initialResult = location.state?.result || (location.state?.results ? location.state : null);
+  const queryDomain = searchParams.get("domain") || "";
+  const rawCandidate = location.state?.domain || initialResult?.domain || queryDomain || "";
+  const candidateDomain = sanitizeDomain(rawCandidate);
+  const isCandidateWebmail = isWebmailDomain(candidateDomain);
 
-  const [scanResult, setScanResult] = useState(initialResult);
+  const [scanResult, setScanResult] = useState(isCandidateWebmail ? null : initialResult);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
   const [copiedIndex, setCopiedIndex] = useState(null);
@@ -242,8 +247,19 @@ function ResultPage() {
 
   const scanId = params.id || searchParams.get("id");
 
-  // 2. Direct Load / Permalinks / Refresh: fetch by ID if state is missing
+  // Clear cached/stored scan results if webmail is detected
   useEffect(() => {
+    if (isCandidateWebmail) {
+      try {
+        sessionStorage.removeItem("mailguard_scan_result");
+        localStorage.removeItem("mailguard_cached_domain");
+      } catch {}
+    }
+  }, [isCandidateWebmail]);
+
+  // 2. Direct Load / Permalinks / Refresh: fetch by ID only if not webmail
+  useEffect(() => {
+    if (isCandidateWebmail) return;
     if (scanResult) return;
 
     if (scanId) {
@@ -252,6 +268,10 @@ function ResultPage() {
       getScanById(scanId)
         .then((res) => {
           if (res?.data) {
+            if (isWebmailDomain(res.data.domain)) {
+              setScanResult(null);
+              return;
+            }
             setScanResult(res.data);
           } else {
             setFetchError("Audit record not found.");
@@ -263,7 +283,7 @@ function ResultPage() {
         })
         .finally(() => setLoading(false));
     }
-  }, [scanId, scanResult]);
+  }, [scanId, scanResult, isCandidateWebmail]);
 
   const domain = scanResult?.domain || location.state?.domain || "";
   const score = scanResult?.score ?? 0;
@@ -366,6 +386,23 @@ Thanks!`;
     const body = generateHandoverText();
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
+
+  // Critical Webmail Guard: do NOT render scan complete screen or results for public webmail
+  const isResultWebmail = Boolean(scanResult?.domain && isWebmailDomain(scanResult.domain));
+  if (isCandidateWebmail || isResultWebmail) {
+    const blocked =
+      candidateDomain || sanitizeDomain(scanResult?.domain) || "gmail.com";
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <WebmailWarningModal
+          isOpen={true}
+          detectedDomain={blocked}
+          onClose={() => navigate("/", { replace: true })}
+          onTryCustomDomain={() => navigate("/", { replace: true })}
+        />
+      </div>
+    );
+  }
 
   // Loading state
   if (loading) {

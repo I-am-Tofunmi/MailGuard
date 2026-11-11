@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
@@ -23,6 +23,8 @@ function App() {
       <Route path="/scan" element={<ScanPage />} />
       <Route path="/results" element={<ResultPage />} />
       <Route path="/results/:id" element={<ResultPage />} />
+      <Route path="/result" element={<ResultPage />} />
+      <Route path="/result/:id" element={<ResultPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/check-email" element={<CheckEmailPage />} />
@@ -36,6 +38,9 @@ function App() {
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
+
+      {/* Fallback route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
