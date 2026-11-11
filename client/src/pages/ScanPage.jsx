@@ -16,6 +16,7 @@ import {
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { runAudit } from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import { sanitizeDomain, isWebmailDomain } from "../utils/domainUtils";
 import WebmailWarningModal from "../components/WebmailWarningModal";
 
@@ -55,6 +56,7 @@ const defaultChecks = [
 function ScanPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { session } = useAuth();
 
   // 1. Synchronous validation on mount
   const queryDomain = new URLSearchParams(location.search).get("domain") || "";
@@ -116,7 +118,7 @@ function ScanPage() {
       }, 240);
 
       try {
-        const auditResponse = await runAudit(sanitized);
+        const auditResponse = await runAudit(sanitized, [], session?.access_token);
 
         if (progressTimerRef.current) {
           clearInterval(progressTimerRef.current);

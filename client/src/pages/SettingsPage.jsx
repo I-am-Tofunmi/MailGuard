@@ -12,12 +12,17 @@ import {
   Eye,
   EyeOff,
   Info,
+  Camera,
+  Upload,
+  Trash2,
+  LoaderCircle,
 } from "lucide-react";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabaseClient";
+import { getUserDisplayName, getUserAvatarUrl, getUserInitials } from "../utils/userUtils";
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -113,8 +118,17 @@ function passwordStrength(pw) {
 // ── main component ─────────────────────────────────────────────────────────
 
 function SettingsPage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, updateUserMetadata, refreshUser } = useAuth();
   const navigate = useNavigate();
+
+  const displayName = getUserDisplayName(user);
+  const avatarUrl = getUserAvatarUrl(user);
+  const initials = getUserInitials(user);
+
+  // ── Avatar ─────────────────────────────────────────────────────────────
+  const fileInputRef = useRef(null);
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [avatarFeedback, setAvatarFeedback] = useState({ type: "", msg: "" });
 
   // ── Personal info ──────────────────────────────────────────────────────
   const [fullName, setFullName] = useState(
@@ -166,6 +180,101 @@ function SettingsPage() {
 
   // ── handlers ────────────────────────────────────────────────────────────
 
+  async function handleAvatarUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAvatarFeedback({ type: "", msg: "" });
+
+    // Validate type
+    const validTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      setAvatarFeedback({
+        type: "error",
+        msg: "Please upload an image file (JPG, PNG, or WebP).",
+      });
+      return;
+    }
+
+    // Validate size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setAvatarFeedback({
+        type: "error",
+        msg: "Image size must be less than 2MB.",
+      });
+      return;
+    }
+
+    setAvatarLoading(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          const base64Data = reader.result;
+          if (updateUserMetadata) {
+            await updateUserMetadata({ avatar_url: base64Data });
+          } else {
+            const { error } = await supabase.auth.updateUser({
+              data: { avatar_url: base64Data },
+            });
+            if (error) throw error;
+          }
+          if (refreshUser) {
+            await refreshUser();
+          }
+          setAvatarFeedback({
+            type: "success",
+            msg: "Profile avatar updated successfully.",
+          });
+        } catch (err) {
+          setAvatarFeedback({
+            type: "error",
+            msg: err.message || "Failed to update profile photo.",
+          });
+        } finally {
+          setAvatarLoading(false);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setAvatarLoading(false);
+      setAvatarFeedback({
+        type: "error",
+        msg: err.message || "Failed to process image file.",
+      });
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    setAvatarLoading(true);
+    setAvatarFeedback({ type: "", msg: "" });
+    try {
+      if (updateUserMetadata) {
+        await updateUserMetadata({ avatar_url: null });
+      } else {
+        const { error } = await supabase.auth.updateUser({
+          data: { avatar_url: null },
+        });
+        if (error) throw error;
+      }
+      if (refreshUser) {
+        await refreshUser();
+      }
+      setAvatarFeedback({
+        type: "success",
+        msg: "Profile avatar removed.",
+      });
+    } catch (err) {
+      setAvatarFeedback({
+        type: "error",
+        msg: err.message || "Failed to remove avatar.",
+      });
+    } finally {
+      setAvatarLoading(false);
+    }
+  }
+
   async function handleSaveName(e) {
     e.preventDefault();
     setNameFeedback({ type: "", msg: "" });
@@ -176,10 +285,17 @@ function SettingsPage() {
     }
     setNameLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: { full_name: trimmed },
-      });
-      if (error) throw error;
+      if (updateUserMetadata) {
+        await updateUserMetadata({ full_name: trimmed });
+      } else {
+        const { error } = await supabase.auth.updateUser({
+          data: { full_name: trimmed },
+        });
+        if (error) throw error;
+      }
+      if (refreshUser) {
+        await refreshUser();
+      }
       setNameFeedback({ type: "success", msg: "Your name has been updated." });
     } catch (err) {
       setNameFeedback({
@@ -301,8 +417,80 @@ function SettingsPage() {
           <SectionCard
             icon={User}
             title="Personal Information"
-            subtitle="Your name as it appears across MailGuard"
+            subtitle="Your name and photo as they appear across MailGuard"
           >
+            {/* Avatar Upload Container */}
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-4 rounded-xl border border-gray-100 bg-gray-50/70 p-4">
+              <div className="relative group shrink-0">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
+                    className="h-20 w-20 rounded-full object-cover ring-2 ring-emerald-600/30 shadow-sm"
+                  />
+                ) : (
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-xl font-bold text-emerald-800 ring-2 ring-emerald-600/20 shadow-sm">
+                    {initials}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={avatarLoading}
+                  aria-label="Upload new avatar"
+                  className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-700 text-white shadow hover:bg-emerald-800 disabled:opacity-50"
+                >
+                  <Camera size={14} />
+                </button>
+              </div>
+
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-gray-900">Profile Avatar</h3>
+                <p className="mt-0.5 text-xs text-gray-500">
+                  Upload a JPG, PNG, or WebP photo (max 2MB).
+                </p>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png, image/jpeg, image/webp"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={avatarLoading}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-emerald-300 hover:text-emerald-700 disabled:opacity-50"
+                  >
+                    {avatarLoading ? (
+                      <LoaderCircle size={14} className="animate-spin text-emerald-700" />
+                    ) : (
+                      <Upload size={14} />
+                    )}
+                    Upload Photo
+                  </button>
+
+                  {avatarUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveAvatar}
+                      disabled={avatarLoading}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      <Trash2 size={14} />
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                <div className="mt-2">
+                  <FeedbackMessage type={avatarFeedback.type} message={avatarFeedback.msg} />
+                </div>
+              </div>
+            </div>
+
             <form onSubmit={handleSaveName} className="flex flex-col gap-4">
 
               <FormField label="Full name" htmlFor="full-name">
@@ -490,15 +678,27 @@ function SettingsPage() {
           >
             <div className="flex flex-col gap-4">
 
-              {/* Account email display */}
-              <div className="rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
-                <p className="text-xs text-gray-500">Signed in as</p>
-                <p
-                  className="mt-0.5 truncate text-sm font-semibold text-gray-900"
-                  title={user?.email || ""}
-                >
-                  {user?.email || "—"}
-                </p>
+              {/* Account profile display */}
+              <div className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 px-4 py-3">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
+                    className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-emerald-600/30"
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-800">
+                    {initials}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold text-gray-900" title={displayName}>
+                    {displayName}
+                  </p>
+                  <p className="truncate text-xs text-gray-500" title={user?.email || ""}>
+                    {user?.email || "—"}
+                  </p>
+                </div>
               </div>
 
               {/* Sign out */}

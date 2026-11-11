@@ -59,17 +59,24 @@ async function apiRequest(endpoint, options = {}) {
  * Runs a DNS deliverability audit for a domain
  * @param {string} domain
  * @param {string[]} [selectors=[]]
+ * @param {string} [token=null]
  * @returns {Promise<object>}
  */
-export async function runAudit(domain, selectors = []) {
+export async function runAudit(domain, selectors = [], token = null) {
+  const customHeaders = {};
+  if (token) {
+    customHeaders["Authorization"] = `Bearer ${token}`;
+  }
+
   return apiRequest("/scan/audit", {
     method: "POST",
+    headers: customHeaders,
     body: JSON.stringify({ domain, selectors }),
   });
 }
 
 /**
- * Fetches paginated scan history for the authenticated user
+ * Fetches paginated scan history for the authenticated user from /scans/history
  * @param {object} [params={}] { page, limit, search, status }
  * @returns {Promise<object>}
  */
@@ -84,7 +91,7 @@ export async function getScanHistory(params = {}) {
   }
 
   const queryString = query.toString();
-  const endpoint = queryString ? `/history?${queryString}` : "/history";
+  const endpoint = queryString ? `/scans/history?${queryString}` : "/scans/history";
 
   return apiRequest(endpoint, {
     method: "GET",

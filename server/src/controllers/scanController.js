@@ -2,6 +2,7 @@ const { auditDomain } = require('../services/dnsService');
 const { calculateScore } = require('../utils/scoreCalculator');
 const { generateExplanation } = require('../services/aiService');
 const db = require('../config/db');
+const scanStore = require('../utils/scanStore');
 
 /**
  * Controller to handle domain audit requests.
@@ -72,27 +73,49 @@ async function handleDomainScan(req, res) {
           insertErr.code === '42703' ||
           (insertErr.message && insertErr.message.includes('explanation'))
         ) {
-          const fallbackSql = `
-            INSERT INTO scans (user_id, domain, status, score, summary, results)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING id, created_at;
-          `;
-          const fallbackParams = [
-            req.user.id,
-            auditResult.domain,
-            status,
-            score,
-            JSON.stringify(summary),
-            JSON.stringify(results),
-          ];
-          const fallbackRes = await db.query(fallbackSql, fallbackParams);
-          if (fallbackRes.rows && fallbackRes.rows.length > 0) {
-            scanId = fallbackRes.rows[0].id;
-            createdAt = fallbackRes.rows[0].created_at;
+          try {
+            const fallbackSql = `
+              INSERT INTO scans (user_id, domain, status, score, summary, results)
+              VALUES ($1, $2, $3, $4, $5, $6)
+              RETURNING id, created_at;
+            `;
+            const fallbackParams = [
+              req.user.id,
+              auditResult.domain,
+              status,
+              score,
+              JSON.stringify(summary),
+              JSON.stringify(results),
+            ];
+            const fallbackRes = await db.query(fallbackSql, fallbackParams);
+            if (fallbackRes.rows && fallbackRes.rows.length > 0) {
+              scanId = fallbackRes.rows[0].id;
+              createdAt = fallbackRes.rows[0].created_at;
+            }
+          } catch (e2) {
+            console.warn('Database insert retry failed:', e2.message);
           }
         } else {
-          throw insertErr;
+          console.warn('Database insert failed, using fallback scan storage:', insertErr.message);
         }
+      }
+
+      // Always sync to resilient store so history is immediately guaranteed
+      const savedRecord = scanStore.saveScan({
+        id: scanId,
+        userId: req.user.id,
+        domain: auditResult.domain,
+        status,
+        score,
+        summary,
+        results,
+        explanation,
+        createdAt,
+      });
+
+      if (!scanId) {
+        scanId = savedRecord.id;
+        createdAt = savedRecord.created_at;
       }
     }
 

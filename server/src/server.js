@@ -83,6 +83,7 @@ app.get('/health', (req, res) => {
 
 // Mount application routes
 app.use('/api/scan', scanRoutes);
+app.use('/api/scans', historyRoutes);
 app.use('/api/history', historyRoutes);
 
 // Auth test routes to verify middleware behavior

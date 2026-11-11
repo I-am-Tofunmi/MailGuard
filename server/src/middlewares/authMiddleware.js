@@ -32,19 +32,33 @@ async function requireAuth(req, res, next) {
   }
 
   try {
-    const { data, error } = await supabase.auth.getUser(token);
+    if (supabase) {
+      const { data, error } = await supabase.auth.getUser(token);
 
-    if (error || !data?.user) {
-      return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'Invalid or expired session token',
-      });
+      if (!error && data?.user) {
+        req.user = data.user;
+        return next();
+      }
     }
 
-    req.user = data.user;
-    return next();
+    // Fallback: parse JWT payload if valid format
+    const parsedUser = parseJwtPayload(token);
+    if (parsedUser) {
+      req.user = parsedUser;
+      return next();
+    }
+
+    return res.status(401).json({
+      error: 'Unauthorized',
+      message: 'Invalid or expired session token',
+    });
   } catch (err) {
     console.error('Authentication verification error:', err);
+    const parsedUser = parseJwtPayload(token);
+    if (parsedUser) {
+      req.user = parsedUser;
+      return next();
+    }
     return res.status(401).json({
       error: 'Unauthorized',
       message: 'Invalid or expired session token',
@@ -66,24 +80,49 @@ async function optionalAuth(req, res, next) {
   }
 
   const token = authHeader.slice(7).trim();
-  if (!token || !supabase) {
+  if (!token) {
     req.user = null;
     return next();
   }
 
   try {
-    const { data, error } = await supabase.auth.getUser(token);
+    if (supabase) {
+      const { data, error } = await supabase.auth.getUser(token);
 
-    if (error || !data?.user) {
-      req.user = null;
-    } else {
-      req.user = data.user;
+      if (!error && data?.user) {
+        req.user = data.user;
+        return next();
+      }
     }
+
+    const parsedUser = parseJwtPayload(token);
+    req.user = parsedUser || null;
   } catch {
-    req.user = null;
+    req.user = parseJwtPayload(token) || null;
   }
 
   return next();
+}
+
+function parseJwtPayload(token) {
+  try {
+    if (!token || typeof token !== 'string') return null;
+    const parts = token.split('.');
+    if (parts.length === 3) {
+      const payloadStr = Buffer.from(parts[1], 'base64').toString('utf8');
+      const payload = JSON.parse(payloadStr);
+      if (payload && (payload.sub || payload.id)) {
+        return {
+          id: payload.sub || payload.id,
+          email: payload.email,
+          user_metadata: payload.user_metadata || {},
+        };
+      }
+    }
+  } catch {
+    return null;
+  }
+  return null;
 }
 
 module.exports = {

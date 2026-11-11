@@ -52,6 +52,41 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      if (!error && data?.user) {
+        setSession((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            user: data.user,
+          };
+        });
+        return data.user;
+      }
+    } catch (err) {
+      console.warn("Could not refresh user:", err);
+    }
+  };
+
+  const updateUserMetadata = async (metadata) => {
+    const { data, error } = await supabase.auth.updateUser({
+      data: metadata,
+    });
+    if (error) throw error;
+    if (data?.user) {
+      setSession((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          user: data.user,
+        };
+      });
+    }
+    return data?.user;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -59,6 +94,8 @@ export function AuthProvider({ children }) {
         user: session?.user ?? null,
         loading,
         signOut,
+        refreshUser,
+        updateUserMetadata,
       }}
     >
       {children}

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { getUserDisplayName, getUserAvatarUrl, getUserInitials } from "../utils/userUtils";
 
 const navLinks = [
   { name: "Dashboard", path: "/dashboard" },
@@ -26,6 +27,10 @@ function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [logoutError, setLogoutError] = useState("");
+
+  const displayName = getUserDisplayName(user);
+  const avatarUrl = getUserAvatarUrl(user);
+  const initials = getUserInitials(user);
 
   const profileRef = useRef(null);
 
@@ -137,7 +142,19 @@ function Navbar() {
               onClick={() => setProfileOpen((previous) => !previous)}
               className="flex items-center text-gray-600 transition hover:text-emerald-700"
             >
-              <CircleUserRound size={23} strokeWidth={1.5} />
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={displayName}
+                  className="h-7 w-7 rounded-full object-cover ring-2 ring-emerald-600/30"
+                />
+              ) : user ? (
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-800 ring-1 ring-emerald-700/20">
+                  {initials}
+                </span>
+              ) : (
+                <CircleUserRound size={23} strokeWidth={1.5} />
+              )}
             </button>
 
             {profileOpen && (
@@ -145,18 +162,37 @@ function Navbar() {
                 role="menu"
                 className="absolute right-0 top-9 z-50 w-64 rounded-xl border border-gray-200 bg-white p-3 shadow-xl"
               >
-                <div className="border-b border-gray-100 px-2 pb-3">
-                  <p className="text-xs font-medium text-gray-500">
-                    Signed in as
-                  </p>
-
-                  <p
-                    className="mt-1 truncate text-sm font-semibold text-gray-900"
-                    title={user?.email || ""}
-                  >
-                    {user?.email || "MailGuard User"}
-                  </p>
+                <div className="flex items-center gap-3 border-b border-gray-100 px-2 pb-3">
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={displayName}
+                      className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-emerald-600/30"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-800">
+                      {initials}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-gray-900" title={displayName}>
+                      {displayName}
+                    </p>
+                    {user?.email && (
+                      <p className="truncate text-xs text-gray-500" title={user.email}>
+                        {user.email}
+                      </p>
+                    )}
+                  </div>
                 </div>
+
+                <Link
+                  to="/settings"
+                  onClick={() => setProfileOpen(false)}
+                  className="mt-2 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-gray-700 transition hover:bg-gray-100"
+                >
+                  Settings & Profile
+                </Link>
 
                 {logoutError && (
                   <p role="alert" className="mt-2 px-2 text-xs text-red-600">
@@ -169,9 +205,9 @@ function Navbar() {
                   role="menuitem"
                   onClick={handleLogout}
                   disabled={logoutLoading}
-                  className="mt-2 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <LogOut size={17} />
+                  <LogOut size={16} />
                   {logoutLoading ? "Signing out..." : "Sign Out"}
                 </button>
               </div>
@@ -226,11 +262,29 @@ function Navbar() {
 
           {/* Mobile Account Section */}
           <div className="mt-6 border-t border-gray-200 pt-4">
-            <p className="text-xs text-gray-500">Signed in as</p>
-
-            <p className="mt-1 break-all text-sm font-semibold text-gray-900">
-              {user?.email || "MailGuard User"}
-            </p>
+            <div className="flex items-center gap-3 mb-3">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={displayName}
+                  className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-emerald-600/30"
+                />
+              ) : (
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-800">
+                  {initials}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-gray-900" title={displayName}>
+                  {displayName}
+                </p>
+                {user?.email && (
+                  <p className="truncate text-xs text-gray-500" title={user.email}>
+                    {user.email}
+                  </p>
+                )}
+              </div>
+            </div>
 
             {logoutError && (
               <p role="alert" className="mt-2 text-xs text-red-600">

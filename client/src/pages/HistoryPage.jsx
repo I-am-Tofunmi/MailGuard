@@ -432,7 +432,7 @@ function EmptyState() {
         to="/scan"
         className="mt-6 inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-emerald-800"
       >
-        Run My First Domain Check
+        Run your first audit
         <ArrowRight size={16} />
       </Link>
     </div>

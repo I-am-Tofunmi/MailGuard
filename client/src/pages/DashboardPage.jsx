@@ -19,6 +19,8 @@ import {
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { getScanHistory, deleteScan } from "../services/api";
+import { useAuth } from "../context/AuthContext";
+import { getUserDisplayName } from "../utils/userUtils";
 
 function formatScanDate(isoString) {
   if (!isoString) return "N/A";
@@ -32,6 +34,8 @@ function formatScanDate(isoString) {
 
 function DashboardPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const displayName = getUserDisplayName(user);
 
   const [domains, setDomains] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -122,7 +126,10 @@ function DashboardPage() {
         {/* Dashboard Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-[#071B36]">
+            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-700">
+              Welcome back, {displayName}
+            </span>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#071B36]">
               Domain Deliverability Monitoring
             </h1>
 
@@ -173,7 +180,7 @@ function DashboardPage() {
                 to="/scan"
                 className="mt-5 inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800"
               >
-                Scan Your Business Domain
+                Run your first audit
               </Link>
             </div>
           ) : (

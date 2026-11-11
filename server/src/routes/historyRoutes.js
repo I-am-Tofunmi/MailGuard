@@ -11,10 +11,11 @@ const { requireAuth } = require('../middlewares/authMiddleware');
 router.use(requireAuth);
 
 /**
- * @route GET /api/history
+ * @route GET /api/history or GET /api/scans/history
  * @desc  Fetch paginated scan history for the authenticated user
  * @access Private
  */
+router.get('/history', getHistory);
 router.get('/', getHistory);
 
 /**
