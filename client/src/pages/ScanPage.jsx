@@ -16,6 +16,8 @@ import {
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { runAudit } from "../services/api";
+import { sanitizeDomain, isPublicWebmailDomain } from "../utils/domainUtils";
+import WebmailWarningModal from "../components/WebmailWarningModal";
 
 const defaultChecks = [
   {
@@ -56,15 +58,19 @@ function ScanPage() {
 
   // 1. Domain detection: check state first, then URL query param
   const queryDomain = new URLSearchParams(location.search).get("domain") || "";
-  const initialDomain = (location.state?.domain || queryDomain).trim();
+  const rawInitial = location.state?.domain || queryDomain;
+  const sanitizedInitial = sanitizeDomain(rawInitial);
+  const isInitialWebmail = isPublicWebmailDomain(sanitizedInitial);
 
-  const [domain, setDomain] = useState(initialDomain);
-  const [manualInput, setManualInput] = useState("");
+  const [domain, setDomain] = useState(isInitialWebmail ? "" : sanitizedInitial);
+  const [manualInput, setManualInput] = useState(isInitialWebmail ? sanitizedInitial : "");
   const [manualError, setManualError] = useState("");
+  const [isWebmailModalOpen, setIsWebmailModalOpen] = useState(isInitialWebmail);
+  const [blockedDomain, setBlockedDomain] = useState(isInitialWebmail ? sanitizedInitial : "");
 
   const [progress, setProgress] = useState(15);
   const [checks, setChecks] = useState(defaultChecks);
-  const [isScanning, setIsScanning] = useState(Boolean(initialDomain));
+  const [isScanning, setIsScanning] = useState(!isInitialWebmail && Boolean(sanitizedInitial));
   const [scanComplete, setScanComplete] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
 
@@ -72,7 +78,17 @@ function ScanPage() {
 
   const executeAudit = useCallback(
     async (domainToScan) => {
-      if (!domainToScan) return;
+      const sanitized = sanitizeDomain(domainToScan);
+      if (!sanitized) return;
+
+      // Intercept free public webmail
+      if (isPublicWebmailDomain(sanitized)) {
+        setBlockedDomain(sanitized);
+        setIsWebmailModalOpen(true);
+        setIsScanning(false);
+        setDomain("");
+        return;
+      }
 
       setIsScanning(true);
       setErrorMessage(null);
@@ -180,12 +196,12 @@ function ScanPage() {
     []
   );
 
-  // Trigger automatically when domain is available on mount
+  // Trigger automatically when a valid custom domain is available on mount
   useEffect(() => {
-    if (initialDomain) {
-      executeAudit(initialDomain);
+    if (sanitizedInitial && !isInitialWebmail) {
+      executeAudit(sanitizedInitial);
     }
-  }, [initialDomain, executeAudit]);
+  }, [sanitizedInitial, isInitialWebmail, executeAudit]);
 
   // Navigate upon successful scan completion
   useEffect(() => {
@@ -212,14 +228,30 @@ function ScanPage() {
 
   const handleManualSubmit = (e) => {
     e.preventDefault();
-    const trimmed = manualInput.trim();
-    if (!trimmed) {
+    const sanitized = sanitizeDomain(manualInput);
+
+    if (!sanitized) {
       setManualError("Please enter your business domain or email address.");
       return;
     }
+
+    // Intercept free public webmail
+    if (isPublicWebmailDomain(sanitized)) {
+      setBlockedDomain(sanitized);
+      setIsWebmailModalOpen(true);
+      return;
+    }
+
     setManualError("");
-    setDomain(trimmed);
-    executeAudit(trimmed);
+    setDomain(sanitized);
+    executeAudit(sanitized);
+  };
+
+  const handleTryCustomDomain = () => {
+    setManualInput("");
+    setManualError("");
+    setDomain("");
+    setIsWebmailModalOpen(false);
   };
 
   const getStatusStyles = (status) => {
@@ -488,6 +520,14 @@ function ScanPage() {
           </>
         )}
       </main>
+
+      {/* Educational Webmail Warning Modal */}
+      <WebmailWarningModal
+        isOpen={isWebmailModalOpen}
+        onClose={() => setIsWebmailModalOpen(false)}
+        onTryCustomDomain={handleTryCustomDomain}
+        detectedDomain={blockedDomain}
+      />
 
       <Footer />
     </div>

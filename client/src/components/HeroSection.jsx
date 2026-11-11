@@ -9,11 +9,15 @@ import {
   Play,
   X,
 } from "lucide-react";
+import { sanitizeDomain, isPublicWebmailDomain } from "../utils/domainUtils";
+import WebmailWarningModal from "./WebmailWarningModal";
 
 function HeroSection() {
   const [domain, setDomain] = useState("");
   const [error, setError] = useState("");
   const [isDemoOpen, setIsDemoOpen] = useState(false);
+  const [isWebmailModalOpen, setIsWebmailModalOpen] = useState(false);
+  const [blockedDomain, setBlockedDomain] = useState("");
   const inputRef = useRef(null);
   const videoRef = useRef(null);
   const navigate = useNavigate();
@@ -28,6 +32,13 @@ function HeroSection() {
       videoRef.current.currentTime = 0;
     }
     setIsDemoOpen(false);
+  };
+
+  const handleTryCustomDomain = () => {
+    setDomain("");
+    setError("");
+    setIsWebmailModalOpen(false);
+    inputRef.current?.focus();
   };
 
   useEffect(() => {
@@ -50,17 +61,24 @@ function HeroSection() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const trimmed = domain.trim();
+    const sanitized = sanitizeDomain(domain);
 
-    if (!trimmed) {
+    if (!sanitized) {
       setError("Please enter your business domain or email address to scan.");
       inputRef.current?.focus();
       return;
     }
 
+    // Intercept public free webmail providers (gmail.com, yahoo.com, etc.)
+    if (isPublicWebmailDomain(sanitized)) {
+      setBlockedDomain(sanitized);
+      setIsWebmailModalOpen(true);
+      return;
+    }
+
     setError("");
-    navigate(`/scan?domain=${encodeURIComponent(trimmed)}`, {
-      state: { domain: trimmed },
+    navigate(`/scan?domain=${encodeURIComponent(sanitized)}`, {
+      state: { domain: sanitized },
     });
   };
 
@@ -182,6 +200,13 @@ function HeroSection() {
           </div>
         </div>
       )}
+      {/* Educational Webmail Warning Modal */}
+      <WebmailWarningModal
+        isOpen={isWebmailModalOpen}
+        onClose={() => setIsWebmailModalOpen(false)}
+        onTryCustomDomain={handleTryCustomDomain}
+        detectedDomain={blockedDomain}
+      />
     </section>
   );
 }
