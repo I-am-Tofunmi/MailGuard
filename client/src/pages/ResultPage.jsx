@@ -27,6 +27,7 @@ import {
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { getScanById } from "../services/api";
+import { sanitizeDomain, isWebmailDomain } from "../utils/domainUtils";
 
 const REGISTRAR_GUIDES = [
   {
@@ -299,8 +300,13 @@ function ResultPage() {
   };
 
   const handleReverify = () => {
-    navigate(`/scan?domain=${encodeURIComponent(domain)}`, {
-      state: { domain },
+    const cleaned = sanitizeDomain(domain);
+    if (!cleaned || isWebmailDomain(cleaned)) {
+      navigate("/");
+      return;
+    }
+    navigate(`/scan?domain=${encodeURIComponent(cleaned)}`, {
+      state: { domain: cleaned },
     });
   };
 

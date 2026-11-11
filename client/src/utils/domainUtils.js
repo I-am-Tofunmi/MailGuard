@@ -73,3 +73,6 @@ export function isPublicWebmailDomain(input) {
     (publicDomain) => sanitized === publicDomain || sanitized.endsWith(`.${publicDomain}`)
   );
 }
+
+// Convenient alias matching isWebmailDomain naming
+export const isWebmailDomain = isPublicWebmailDomain;

@@ -16,7 +16,7 @@ import {
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { runAudit } from "../services/api";
-import { sanitizeDomain, isPublicWebmailDomain } from "../utils/domainUtils";
+import { sanitizeDomain, isWebmailDomain } from "../utils/domainUtils";
 import WebmailWarningModal from "../components/WebmailWarningModal";
 
 const defaultChecks = [
@@ -56,47 +56,57 @@ function ScanPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 1. Domain detection: check state first, then URL query param
+  // 1. Synchronous validation on mount
   const queryDomain = new URLSearchParams(location.search).get("domain") || "";
-  const rawInitial = location.state?.domain || queryDomain;
+  const rawInitial = location.state?.domain || queryDomain || "";
   const sanitizedInitial = sanitizeDomain(rawInitial);
-  const isInitialWebmail = isPublicWebmailDomain(sanitizedInitial);
+  const isInitialWebmail = isWebmailDomain(sanitizedInitial);
 
+  const [isWebmailBlocked, setIsWebmailBlocked] = useState(isInitialWebmail);
   const [domain, setDomain] = useState(isInitialWebmail ? "" : sanitizedInitial);
-  const [manualInput, setManualInput] = useState(isInitialWebmail ? sanitizedInitial : "");
+  const [manualInput, setManualInput] = useState("");
   const [manualError, setManualError] = useState("");
   const [isWebmailModalOpen, setIsWebmailModalOpen] = useState(isInitialWebmail);
   const [blockedDomain, setBlockedDomain] = useState(isInitialWebmail ? sanitizedInitial : "");
 
   const [progress, setProgress] = useState(15);
   const [checks, setChecks] = useState(defaultChecks);
-  const [isScanning, setIsScanning] = useState(!isInitialWebmail && Boolean(sanitizedInitial));
+  const [isScanning, setIsScanning] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
 
   const completedResultRef = useRef(null);
+  const progressTimerRef = useRef(null);
 
   const executeAudit = useCallback(
     async (domainToScan) => {
       const sanitized = sanitizeDomain(domainToScan);
-      if (!sanitized) return;
 
-      // Intercept free public webmail
-      if (isPublicWebmailDomain(sanitized)) {
-        setBlockedDomain(sanitized);
+      // Return early / abort immediately before dispatching runAudit() if empty or webmail
+      if (!sanitized || isWebmailDomain(sanitized)) {
+        if (progressTimerRef.current) {
+          clearInterval(progressTimerRef.current);
+          progressTimerRef.current = null;
+        }
+        setIsWebmailBlocked(true);
+        setBlockedDomain(sanitized || "webmail");
         setIsWebmailModalOpen(true);
         setIsScanning(false);
         setDomain("");
         return;
       }
 
+      setIsWebmailBlocked(false);
       setIsScanning(true);
       setErrorMessage(null);
       setScanComplete(false);
       setProgress(15);
       setChecks(defaultChecks);
 
-      let progressTimer = setInterval(() => {
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+      }
+      progressTimerRef.current = setInterval(() => {
         setProgress((prev) => {
           if (prev < 88) {
             return prev + Math.floor(Math.random() * 8 + 3);
@@ -106,9 +116,12 @@ function ScanPage() {
       }, 240);
 
       try {
-        const auditResponse = await runAudit(domainToScan);
+        const auditResponse = await runAudit(sanitized);
 
-        clearInterval(progressTimer);
+        if (progressTimerRef.current) {
+          clearInterval(progressTimerRef.current);
+          progressTimerRef.current = null;
+        }
         setProgress(100);
 
         const rawResults = auditResponse.results || {
@@ -185,7 +198,10 @@ function ScanPage() {
         completedResultRef.current = auditResponse;
         setScanComplete(true);
       } catch (err) {
-        clearInterval(progressTimer);
+        if (progressTimerRef.current) {
+          clearInterval(progressTimerRef.current);
+          progressTimerRef.current = null;
+        }
         console.error("DNS audit failed:", err);
         setErrorMessage(
           err.message || "Unable to check this domain right now. Please verify the domain name or check your connection."
@@ -196,12 +212,44 @@ function ScanPage() {
     []
   );
 
-  // Trigger automatically when a valid custom domain is available on mount
+  // Synchronous validation on mount: check URL or state domain immediately
   useEffect(() => {
-    if (sanitizedInitial && !isInitialWebmail) {
-      executeAudit(sanitizedInitial);
+    const searchParams = new URLSearchParams(location.search);
+    const domainFromQuery = searchParams.get("domain") || "";
+    const raw = location.state?.domain || domainFromQuery || "";
+    const clean = sanitizeDomain(raw);
+
+    if (!clean) {
+      setIsScanning(false);
+      setIsWebmailBlocked(false);
+      return;
     }
-  }, [sanitizedInitial, isInitialWebmail, executeAudit]);
+
+    // Immediately block and abort if webmail provider
+    if (isWebmailDomain(clean)) {
+      setIsWebmailBlocked(true);
+      setBlockedDomain(clean);
+      setIsWebmailModalOpen(true);
+      setIsScanning(false);
+      setDomain("");
+      return; // Return early / abort before dispatching runAudit()
+    }
+
+    // Valid business domain
+    setIsWebmailBlocked(false);
+    setIsWebmailModalOpen(false);
+    setDomain(clean);
+    executeAudit(clean);
+  }, [location.search, location.state, executeAudit]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+      }
+    };
+  }, []);
 
   // Navigate upon successful scan completion
   useEffect(() => {
@@ -236,22 +284,55 @@ function ScanPage() {
     }
 
     // Intercept free public webmail
-    if (isPublicWebmailDomain(sanitized)) {
+    if (isWebmailDomain(sanitized)) {
+      setIsWebmailBlocked(true);
       setBlockedDomain(sanitized);
       setIsWebmailModalOpen(true);
-      return;
+      setIsScanning(false);
+      setDomain("");
+      return; // Return early / abort
     }
 
     setManualError("");
+    setIsWebmailBlocked(false);
     setDomain(sanitized);
     executeAudit(sanitized);
   };
 
   const handleTryCustomDomain = () => {
+    setIsWebmailModalOpen(false);
+    setIsWebmailBlocked(false);
+    setBlockedDomain("");
     setManualInput("");
     setManualError("");
     setDomain("");
+    setIsScanning(false);
+    setScanComplete(false);
+    setErrorMessage(null);
+    completedResultRef.current = null;
+
+    // Navigate cleanly back to home (/) without leftover query params or results
+    navigate("/", { replace: true });
+  };
+
+  const handleModalClose = () => {
     setIsWebmailModalOpen(false);
+    if (isWebmailBlocked) {
+      setDomain("");
+      setIsScanning(false);
+    }
+  };
+
+  const handleRetryScan = () => {
+    const clean = sanitizeDomain(domain);
+    // Prevent re-scan execution if domain is missing or webmail
+    if (!clean || isWebmailDomain(clean)) {
+      setIsWebmailBlocked(true);
+      setBlockedDomain(clean || "webmail");
+      setIsWebmailModalOpen(true);
+      return;
+    }
+    executeAudit(clean);
   };
 
   const getStatusStyles = (status) => {
@@ -309,8 +390,8 @@ function ScanPage() {
       <Navbar />
 
       <main className="flex flex-1 flex-col items-center px-4 pb-16 pt-8 sm:px-8 sm:pt-10">
-        {/* If no domain provided yet: Direct Domain Entry Form */}
-        {!domain && !isScanning ? (
+        {/* If webmail is blocked, or no domain provided yet: Direct Domain Entry Form */}
+        {(!domain || isWebmailBlocked) && !isScanning ? (
           <div className="w-full max-w-[620px] rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8 text-center mt-4">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
               <Globe size={26} className="text-emerald-700" />
@@ -389,8 +470,9 @@ function ScanPage() {
                 <div className="mt-4 flex flex-wrap justify-center gap-3">
                   <button
                     type="button"
-                    onClick={() => executeAudit(domain)}
-                    className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-emerald-700 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white hover:bg-emerald-800 cursor-pointer"
+                    disabled={!domain || isWebmailDomain(domain)}
+                    onClick={handleRetryScan}
+                    className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-emerald-700 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50 cursor-pointer"
                   >
                     <RotateCcw size={14} />
                     Retry Scan
@@ -401,6 +483,7 @@ function ScanPage() {
                       setDomain("");
                       setErrorMessage(null);
                       setIsScanning(false);
+                      setIsWebmailBlocked(false);
                     }}
                     className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-xs sm:text-sm font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer"
                   >
@@ -524,7 +607,7 @@ function ScanPage() {
       {/* Educational Webmail Warning Modal */}
       <WebmailWarningModal
         isOpen={isWebmailModalOpen}
-        onClose={() => setIsWebmailModalOpen(false)}
+        onClose={handleModalClose}
         onTryCustomDomain={handleTryCustomDomain}
         detectedDomain={blockedDomain}
       />
